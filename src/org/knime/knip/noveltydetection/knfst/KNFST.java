@@ -8,70 +8,18 @@ import org.jblas.Eigen;
 import org.jblas.MatrixFunctions;
 import org.jblas.Singular;
 import org.jblas.ranges.IntervalRange;
+import org.knime.core.node.BufferedDataTable;
 
-public class KNFST {
-        private String[] m_labels;
-        private Kernel m_kernel;
-        private DoubleMatrix m_projection;
-        private DoubleMatrix m_targetPoints;
+public abstract class KNFST {
+        protected Kernel m_kernel;
+        protected DoubleMatrix m_projection;
+        protected DoubleMatrix m_targetPoints;
 
-        // wrapper for multiple classes (for convenience and understandability)
-        public KNFST learn_multiClassNovelty_knfst(Kernel kernel, String[] labels) {
-                return new KNFST(kernel, labels);
+        public KNFST(Kernel kernel) {
+                m_kernel = kernel;
         }
 
-        // constructor for multiple classes
-        private KNFST(Kernel kernel, String[] labels) {
-                this.m_labels = labels;
-                this.m_kernel = kernel;
-
-                DoubleMatrix kernelMatrix = kernel.kernelize();
-
-                // obtain unique class labels
-                ArrayList<ClassWrapper> classes = ClassWrapper.classes(labels);
-
-                // calculate projection of KNFST
-                this.m_projection = projection(kernelMatrix, labels);
-
-                // calculate target points ( = projections of training data into the null space)
-                DoubleMatrix targetPoints = DoubleMatrix.zeros(classes.size(), this.m_projection.getColumns());
-                int n = 0;
-                int nOld = 0;
-                for (int c = 0; c < classes.size(); c++) {
-                        n += classes.get(c).getCount();
-                        final IntervalRange interval = new IntervalRange(nOld, n - 1);
-                        targetPoints.putRow(c, kernelMatrix.getRows(interval).mmul(m_projection).columnMeans());
-                        nOld = n;
-                }
-        }
-
-        // wrapper for single class (for convenience and understandability)
-        public KNFST learn_oneClassNovelty_knfst(final Kernel kernel) {
-                return new KNFST(kernel);
-        }
-
-        // constructor for single class
-        private KNFST(final Kernel kernel) {
-                this.m_kernel = kernel;
-                // get number of training samples
-                int n = m_kernel.getNumTrainingSamples();
-                DoubleMatrix kernelMatrix = m_kernel.kernelize();
-
-                // include dot products of training samples and the origin in feature space (these dot products are always zero!)
-                final DoubleMatrix k = DoubleMatrix.concatVertically(DoubleMatrix.concatHorizontally(kernelMatrix, DoubleMatrix.zeros(n)),
-                                DoubleMatrix.zeros(n + 1));
-
-                // create one-class labels + a different label for the origin
-                final String[] labels = new String[n + 1];
-                for (int l = 0; l < n; l++)
-                        labels[l] = (l == n - 1) ? "0" : "1";
-
-                // get model parameters
-                final DoubleMatrix projection = projection(k, labels);
-                this.m_targetPoints = kernelMatrix.mmul(projection).columnMeans();
-                this.m_projection = projection.getRows(new IntervalRange(0, n - 1));
-
-        }
+        public abstract double[] scoreTestData(BufferedDataTable test);
 
         public static DoubleMatrix projection(final DoubleMatrix kernelMatrix, final String[] labels) {
 
