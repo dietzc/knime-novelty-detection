@@ -33,6 +33,10 @@ public class Kernel {
                 return calculateKernelMatrix(m_trainingData, testData);
         }
 
+        public int getNumTrainingSamples() {
+                return m_trainingData.getRowCount();
+        }
+
         /* Private helper function to calculate the kernel matrix for of two data tables
          * Parameters:  training:   KNIME BufferedDataTable containing the training data
          *              test:       KNIME BufferedDataTable containing the test data
@@ -51,4 +55,5 @@ public class Kernel {
 
                 return kernelMatrix;
         }
+
 }
