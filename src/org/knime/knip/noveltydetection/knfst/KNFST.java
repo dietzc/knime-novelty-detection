@@ -224,10 +224,10 @@ public class KNFST {
                 DoubleMatrix A = new DoubleMatrix(3, 3, elements);
                 DoubleMatrix L = DoubleMatrix.zeros(6, 6);
                 DoubleMatrix Z = nullspace(A);
+                for (int i = 0; i < 9; i++)
+                        System.out.println(A.get(i));
 
-                Test.printMatrix(Z);
-                Test.printMatrix(A.mmul(Z));
-                Test.printMatrix(Z.transpose().mmul(Z));
+                Test.printMatrix(A);
                 /*
                 DoubleMatrix[] eig = Eigen.symmetricEigenvectors(A);
                 test.printMatrix(eig[0]);

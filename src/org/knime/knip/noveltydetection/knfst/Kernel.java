@@ -1,8 +1,6 @@
 package org.knime.knip.noveltydetection.knfst;
 
 import org.jblas.DoubleMatrix;
-import org.jblas.ranges.Range;
-import org.jblas.ranges.RangeUtils;
 import org.knime.core.data.DataRow;
 import org.knime.core.node.BufferedDataTable;
 
@@ -44,12 +42,11 @@ public class Kernel {
          */
         private DoubleMatrix calculateKernelMatrix(BufferedDataTable training, BufferedDataTable test) {
                 final DoubleMatrix kernelMatrix = DoubleMatrix.zeros(test.getRowCount(), training.getRowCount());
-                final Range index = RangeUtils.indices(kernelMatrix);
+                int index = 0;
 
                 for (DataRow sample1 : test) {
                         for (DataRow sample2 : training) {
-                                kernelMatrix.put(index.value(), m_kernelFunction.calculate(sample1, sample2));
-                                index.next();
+                                kernelMatrix.put(index++, m_kernelFunction.calculate(sample1, sample2));
                         }
                 }
 
