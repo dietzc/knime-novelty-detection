@@ -1,10 +1,15 @@
 package org.knime.knip.noveltydetection.knfst;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
 import org.jblas.DoubleMatrix;
 import org.knime.core.data.DataRow;
 import org.knime.core.node.BufferedDataTable;
 
-public class Kernel {
+public class Kernel implements Externalizable {
 
         // Holds the training data
         private BufferedDataTable m_trainingData;
@@ -51,6 +56,19 @@ public class Kernel {
                 }
 
                 return kernelMatrix;
+        }
+
+        @Override
+        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+                // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void writeExternal(ObjectOutput out) throws IOException {
+                out.writeUTF(m_kernelFunction.getClass().getName());
+                m_kernelFunction.writeExternal(out);
+
         }
 
 }

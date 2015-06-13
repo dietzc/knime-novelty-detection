@@ -1,5 +1,9 @@
 package org.knime.knip.noveltydetection.knfst;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 
 import org.jblas.ComplexDoubleMatrix;
@@ -10,7 +14,7 @@ import org.jblas.Singular;
 import org.jblas.ranges.IntervalRange;
 import org.knime.core.node.BufferedDataTable;
 
-public abstract class KNFST {
+public abstract class KNFST implements Externalizable {
         protected Kernel m_kernel;
         protected DoubleMatrix m_projection;
         protected DoubleMatrix m_targetPoints;
@@ -165,6 +169,73 @@ public abstract class KNFST {
                 return basis;
         }
 
+        // Methods of Externalizable interface
+
+        public void readExternal(ObjectInput arg0) throws IOException, ClassNotFoundException {
+
+                try {
+                        // read kernel
+                        m_kernel = (Kernel) Class.forName(arg0.readUTF()).newInstance();
+                        m_kernel.readExternal(arg0);
+
+                        // read projection
+                        // rows
+                        final int rowsProj = arg0.readInt();
+                        // columns
+                        final int colsProj = arg0.readInt();
+                        // data
+                        final double[] projData = new double[arg0.readInt()];
+                        for (int d = 0; d < projData.length; d++)
+                                projData[d] = arg0.readDouble();
+                        // Matrix construction
+                        m_projection = new DoubleMatrix(rowsProj, colsProj, projData);
+
+                        // read targetPoints
+                        // rows
+                        final int rowsTar = arg0.readInt();
+                        // columns
+                        final int colsTar = arg0.readInt();
+                        // data
+                        final double[] tarData = new double[arg0.readInt()];
+                        for (int d = 0; d < tarData.length; d++)
+                                tarData[d] = arg0.readDouble();
+                        // Matrix construction
+                        m_targetPoints = new DoubleMatrix(rowsTar, colsTar, tarData);
+
+                } catch (InstantiationException | IllegalAccessException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                }
+        }
+
+        public void writeExternal(ObjectOutput arg0) throws IOException {
+                // write kernel
+                arg0.writeUTF(m_kernel.getClass().getName());
+                m_kernel.writeExternal(arg0);
+
+                // write projection
+                // rows
+                arg0.writeInt(m_projection.getRows());
+                // columns
+                arg0.writeInt(m_projection.getColumns());
+                // data
+                arg0.writeInt(m_projection.getLength());
+                final double[] projData = m_projection.toArray();
+                for (double d : projData)
+                        arg0.writeDouble(d);
+
+                // write targetPoints
+                // rows
+                arg0.writeInt(m_targetPoints.getRows());
+                // columns
+                arg0.writeInt(m_targetPoints.getColumns());
+                // data
+                arg0.writeInt(m_targetPoints.getLength());
+                final double[] tarData = m_targetPoints.toArray();
+                for (double d : tarData)
+                        arg0.writeDouble(d);
+        }
+
         public static void main(String[] args) {
                 String[] labels = {"A", "A", "A", "B", "B", "C"};
                 ArrayList<ClassWrapper> classes = ClassWrapper.classes(labels);
@@ -197,4 +268,5 @@ public abstract class KNFST {
                 A.getColumn(2).print(); */
 
         }
+
 }

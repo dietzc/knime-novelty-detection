@@ -1,5 +1,8 @@
 package org.knime.knip.noveltydetection.knfst;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 
 import org.jblas.DoubleMatrix;
@@ -64,5 +67,30 @@ public class MultiClassKNFST extends KNFST {
                 }
 
                 return distmat;
+        }
+
+        @Override
+        public void readExternal(ObjectInput arg0) throws IOException, ClassNotFoundException {
+                // call super method
+                super.readExternal(arg0);
+
+                // read labels
+                String[] m_labels = new String[arg0.readInt()];
+                for (int l = 0; l < m_labels.length; l++) {
+                        m_labels[l] = arg0.readUTF();
+                }
+
+        }
+
+        @Override
+        public void writeExternal(ObjectOutput arg0) throws IOException {
+                // call super method
+                super.writeExternal(arg0);
+
+                // write labels
+                arg0.writeInt(m_labels.length);
+                for (String label : m_labels)
+                        arg0.writeUTF(label);
+
         }
 }
