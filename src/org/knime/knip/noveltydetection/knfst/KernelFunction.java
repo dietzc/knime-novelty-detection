@@ -12,4 +12,8 @@ public interface KernelFunction extends Externalizable {
          * Output: Kernel value for the two samples
          */
         public double calculate(DataRow sample1, DataRow sample2);
+
+        public double calculate(double[] sample1, DataRow sample2);
+
+        public double calculate(double[] sample1, double[] sample2);
 }

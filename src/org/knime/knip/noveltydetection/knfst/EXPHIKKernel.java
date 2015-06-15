@@ -9,8 +9,22 @@ import org.knime.core.data.DataRow;
 public class EXPHIKKernel implements KernelFunction {
 
         @Override
-        public double calculate(DataRow sample1, DataRow sample2) {
-                HIKKernel hik = new HIKKernel();
+        public double calculate(final DataRow sample1, final DataRow sample2) {
+                final HIKKernel hik = new HIKKernel();
+
+                return Math.exp(hik.calculate(sample1, sample2) - hik.calculate(sample1, sample1) - hik.calculate(sample2, sample2));
+        }
+
+        @Override
+        public double calculate(final double[] sample1, final DataRow sample2) {
+                final HIKKernel hik = new HIKKernel();
+
+                return Math.exp(hik.calculate(sample1, sample2) - hik.calculate(sample1, sample1) - hik.calculate(sample2, sample2));
+        }
+
+        @Override
+        public double calculate(final double[] sample1, final double[] sample2) {
+                final HIKKernel hik = new HIKKernel();
 
                 return Math.exp(hik.calculate(sample1, sample2) - hik.calculate(sample1, sample1) - hik.calculate(sample2, sample2));
         }
