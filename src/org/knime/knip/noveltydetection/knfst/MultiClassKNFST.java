@@ -14,7 +14,7 @@ public class MultiClassKNFST extends KNFST {
 
         private String[] m_labels;
 
-        public MultiClassKNFST(Kernel kernel, String[] labels) {
+        public MultiClassKNFST(KernelCalculator kernel, String[] labels) {
                 super(kernel);
                 m_labels = labels;
 

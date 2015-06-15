@@ -15,11 +15,11 @@ import org.jblas.ranges.IntervalRange;
 import org.knime.core.node.BufferedDataTable;
 
 public abstract class KNFST implements Externalizable {
-        protected Kernel m_kernel;
+        protected KernelCalculator m_kernel;
         protected DoubleMatrix m_projection;
         protected DoubleMatrix m_targetPoints;
 
-        public KNFST(Kernel kernel) {
+        public KNFST(KernelCalculator kernel) {
                 m_kernel = kernel;
         }
 
@@ -175,7 +175,7 @@ public abstract class KNFST implements Externalizable {
 
                 try {
                         // read kernel
-                        m_kernel = (Kernel) Class.forName(arg0.readUTF()).newInstance();
+                        m_kernel = (KernelCalculator) Class.forName(arg0.readUTF()).newInstance();
                         m_kernel.readExternal(arg0);
 
                         // read projection

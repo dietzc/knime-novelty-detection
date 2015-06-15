@@ -9,14 +9,14 @@ import org.jblas.DoubleMatrix;
 import org.knime.core.data.DataRow;
 import org.knime.core.node.BufferedDataTable;
 
-public class Kernel implements Externalizable {
+public class KernelCalculator implements Externalizable {
 
         // Holds the training data
         private BufferedDataTable m_trainingData;
 
         private KernelFunction m_kernelFunction;
 
-        public Kernel(BufferedDataTable trainingData, KernelFunction kernelFunction) {
+        public KernelCalculator(BufferedDataTable trainingData, KernelFunction kernelFunction) {
                 m_trainingData = trainingData;
                 m_kernelFunction = kernelFunction;
         }
@@ -60,7 +60,14 @@ public class Kernel implements Externalizable {
 
         @Override
         public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-                // TODO Auto-generated method stub
+                try {
+                        m_kernelFunction = (KernelFunction) Class.forName(in.readUTF()).newInstance();
+                        m_kernelFunction.readExternal(in);
+
+                } catch (InstantiationException | IllegalAccessException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                }
 
         }
 
