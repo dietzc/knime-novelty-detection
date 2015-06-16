@@ -1,17 +1,23 @@
 package org.knime.knip.noveltydetection.nodes.knfstlearner;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.zip.ZipEntry;
 
 import javax.swing.JComponent;
 
+import org.knime.core.data.util.NonClosableInputStream;
+import org.knime.core.data.util.NonClosableOutputStream;
+import org.knime.core.node.CanceledExecutionException;
+import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
+import org.knime.core.node.port.PortObjectZipInputStream;
+import org.knime.core.node.port.PortObjectZipOutputStream;
 import org.knime.knip.noveltydetection.knfst.KNFST;
 
-public class KNFSTPortObject implements PortObject, Externalizable {
+public class KNFSTPortObject implements PortObject {
 
         private static final String SUMMARY = "Kernel Null Foley Sammon Transformation Object for novelty scoring";
 
@@ -19,6 +25,80 @@ public class KNFSTPortObject implements PortObject, Externalizable {
 
         public KNFSTPortObject(KNFST knfst) {
                 m_knfstModel = knfst;
+        }
+
+        public static PortObjectSerializer<KNFSTPortObject> getPortObjectSerializer() {
+                return new PortObjectSerializer<KNFSTPortObject>() {
+
+                        @Override
+                        public void savePortObject(KNFSTPortObject portObject, PortObjectZipOutputStream out, ExecutionMonitor exec)
+                                        throws IOException, CanceledExecutionException {
+                                portObject.save(out);
+
+                        }
+
+                        @Override
+                        public KNFSTPortObject loadPortObject(PortObjectZipInputStream in, PortObjectSpec spec, ExecutionMonitor exec)
+                                        throws IOException, CanceledExecutionException {
+                                // TODO Auto-generated method stub
+                                return load(in);
+                        }
+
+                };
+        }
+
+        private void save(final PortObjectZipOutputStream out) {
+                ObjectOutputStream oo = null;
+                try {
+                        out.putNextEntry(new ZipEntry("knfst.objectout"));
+                        oo = new ObjectOutputStream(new NonClosableOutputStream.Zip(out));
+                        m_knfstModel.writeExternal(oo);
+                } catch (IOException ioe) {
+
+                } finally {
+                        if (oo != null) {
+                                try {
+                                        oo.close();
+                                } catch (Exception e) {
+
+                                }
+                        }
+                }
+        }
+
+        private static KNFSTPortObject load(final PortObjectZipInputStream in) {
+                ObjectInputStream oi = null;
+                KNFST knfst = null;
+
+                try {
+                        // load classifier
+                        ZipEntry zentry = in.getNextEntry();
+                        assert zentry.getName().equals("knfst.objectout");
+                        oi = new ObjectInputStream(new NonClosableInputStream.Zip(in));
+                        knfst = (KNFST) Class.forName(oi.readUTF()).newInstance();
+                        knfst.readExternal(oi);
+                } catch (IOException ioe) {
+
+                } catch (ClassNotFoundException cnf) {
+
+                } catch (InstantiationException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                } finally {
+                        if (oi != null) {
+                                try {
+                                        oi.close();
+                                } catch (Exception e) {
+
+                                }
+                        }
+                }
+
+                return new KNFSTPortObject(knfst);
+
         }
 
         @Override
@@ -36,25 +116,6 @@ public class KNFSTPortObject implements PortObject, Externalizable {
         public JComponent[] getViews() {
                 // TODO Auto-generated method stub
                 return null;
-        }
-
-        @Override
-        public void readExternal(ObjectInput arg0) throws IOException, ClassNotFoundException {
-                try {
-                        m_knfstModel = (KNFST) Class.forName(arg0.readUTF()).newInstance();
-                        m_knfstModel.readExternal(arg0);
-                } catch (InstantiationException | IllegalAccessException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                }
-
-        }
-
-        @Override
-        public void writeExternal(ObjectOutput arg0) throws IOException {
-                arg0.writeUTF(m_knfstModel.getClass().getName());
-                m_knfstModel.writeExternal(arg0);
-
         }
 
 }
