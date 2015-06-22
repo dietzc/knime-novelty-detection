@@ -49,24 +49,35 @@
 package org.knime.knip.noveltydetection.nodes.knfstlearner;
 
 import java.io.File;
+import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
 
 import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
+import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
-import org.knime.core.node.BufferedDataContainer;
+import org.knime.core.data.StringValue;
+import org.knime.core.data.container.ColumnRearranger;
 import org.knime.core.node.BufferedDataTable;
-import org.knime.core.node.BufferedDataTableHolder;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelFilterString;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
+import org.knime.core.node.port.PortObject;
+import org.knime.core.node.port.PortType;
 import org.knime.knip.base.data.img.ImgPlusCell;
-import org.knime.knip.base.data.img.ImgPlusCellFactory;
+import org.knime.knip.noveltydetection.knfst.EXPHIKKernel;
+import org.knime.knip.noveltydetection.knfst.HIKKernel;
+import org.knime.knip.noveltydetection.knfst.KNFST;
+import org.knime.knip.noveltydetection.knfst.KernelCalculator;
+import org.knime.knip.noveltydetection.knfst.KernelFunction;
+import org.knime.knip.noveltydetection.knfst.MultiClassKNFST;
+import org.knime.knip.noveltydetection.knfst.OneClassKNFST;
 
 /**
  * Crop BitMasks or parts of images according to a Labeling
@@ -79,7 +90,7 @@ import org.knime.knip.base.data.img.ImgPlusCellFactory;
  * @param <T>
  */
 @SuppressWarnings("deprecation")
-public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel implements BufferedDataTableHolder {
+public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel {
 
         static final String[] BACKGROUND_OPTIONS = new String[] {"Min Value of Result", "Max Value of Result", "Zero", "Source"};
 
@@ -88,26 +99,31 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
          *
          * @return SettingsModel to store img column
          */
-        static SettingsModelString createImgColumnSelectionModel() {
-                return new SettingsModelString("ADRIAN", "");
+        static SettingsModelString createKernelFunctionSelectionModel() {
+                return new SettingsModelString("kernelFunction", "HIK");
         }
 
-        static SettingsModelString createNumPatchesSelectionModel() {
-                return new SettingsModelString("NumPatches", "0");
+        static SettingsModelFilterString createColumnSelectionModel() {
+                return new SettingsModelFilterString("Column Filter");
+        }
+
+        static SettingsModelString createClassColumnSelectionModel() {
+                return new SettingsModelString("Class", "");
         }
 
         /* SettingsModels */
-        private SettingsModelString m_imgColumnNameModel = createImgColumnSelectionModel();
-        private SettingsModelString m_numPatchesModel = createNumPatchesSelectionModel();
+        private SettingsModelString m_kernelFunctionModel = createKernelFunctionSelectionModel();
+        private SettingsModelFilterString m_columnSelection = createColumnSelectionModel();
+        private SettingsModelString m_classColumn = createClassColumnSelectionModel();
 
-        /* Resulting BufferedDataTable */
-        private BufferedDataTable m_data;
+        /* Resulting PortObject */
+        private KNFSTPortObject m_knfstPortObject;
 
         /**
          * Constructor SegementCropperNodeModel
          */
         public KNFSTLearnerNodeModel() {
-                super(1, 1);
+                super(new PortType[] {BufferedDataTable.TYPE}, new PortType[] {KNFSTPortObject.TYPE});
         }
 
         /**
@@ -132,22 +148,58 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
          */
         @Override
         @SuppressWarnings({"unchecked"})
-        protected BufferedDataTable[] execute(final BufferedDataTable[] inData, final ExecutionContext exec) throws Exception {
+        protected PortObject[] execute(final PortObject[] inData, final ExecutionContext exec) throws Exception {
 
-                final BufferedDataContainer container = exec.createDataContainer(createOutSpec()[0]);
-                final ImgPlusCellFactory imgCellFac = new ImgPlusCellFactory(exec);
+                BufferedDataTable data = (BufferedDataTable) inData[0];
+                String kernelFunctionName = m_kernelFunctionModel.getStringValue();
 
-                int imgCellIdx = inData[0].getSpec().findColumnIndex(m_imgColumnNameModel.getStringValue());
+                final int classColIdx = data.getSpec().findColumnIndex(m_classColumn.getStringValue());
+                String[] labels = new String[data.getRowCount()];
+                int l = 0;
+                boolean oneClass = true;
+                String currentClass = null;
+                for (DataRow row : data) {
 
-                return new BufferedDataTable[] {m_data};
-        }
+                        StringValue label = (StringValue) row.getCell(classColIdx);
+                        if (currentClass == null) {
+                                currentClass = label.getStringValue();
+                        } else if (!currentClass.equals(label.getStringValue())) {
+                                oneClass = false;
+                        }
+                        labels[l++] = label.getStringValue();
+                }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public BufferedDataTable[] getInternalTables() {
-                return new BufferedDataTable[] {m_data};
+                List<String> excludedColumns = m_columnSelection.getExcludeList();
+                ColumnRearranger cr = new ColumnRearranger(data.getDataTableSpec());
+
+                for (String col : excludedColumns)
+                        cr.remove(col);
+
+                final BufferedDataTable training = exec.createColumnRearrangeTable(data, cr, exec);
+
+                KNFST knfst = null;
+
+                KernelFunction kernelFunction = null;
+                switch (kernelFunctionName) {
+                case "HIK":
+                        kernelFunction = new HIKKernel();
+                        break;
+                case "EXPHIK":
+                        kernelFunction = new EXPHIKKernel();
+                        break;
+                }
+
+                final KernelCalculator kernelCalculator = new KernelCalculator(training, kernelFunction);
+
+                if (oneClass) {
+                        knfst = new OneClassKNFST(kernelCalculator);
+                } else {
+                        knfst = new MultiClassKNFST(kernelCalculator, labels);
+                }
+
+                m_knfstPortObject = new KNFSTPortObject(knfst);
+
+                return new PortObject[] {m_knfstPortObject};
         }
 
         /**
@@ -163,8 +215,8 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
          */
         @Override
         protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
-                m_imgColumnNameModel.loadSettingsFrom(settings);
-                m_numPatchesModel.loadSettingsFrom(settings);
+                m_kernelFunctionModel.loadSettingsFrom(settings);
+                m_columnSelection.loadSettingsFrom(settings);
         }
 
         /**
@@ -188,16 +240,8 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
          */
         @Override
         protected void saveSettingsTo(final NodeSettingsWO settings) {
-                m_imgColumnNameModel.saveSettingsTo(settings);
-                m_numPatchesModel.saveSettingsTo(settings);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void setInternalTables(final BufferedDataTable[] tables) {
-                m_data = tables[0];
+                m_kernelFunctionModel.saveSettingsTo(settings);
+                m_columnSelection.saveSettingsTo(settings);
         }
 
         /**
@@ -205,7 +249,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
          */
         @Override
         protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-                m_imgColumnNameModel.validateSettings(settings);
-                m_numPatchesModel.validateSettings(settings);
+                m_kernelFunctionModel.validateSettings(settings);
+                m_columnSelection.validateSettings(settings);
         }
 }

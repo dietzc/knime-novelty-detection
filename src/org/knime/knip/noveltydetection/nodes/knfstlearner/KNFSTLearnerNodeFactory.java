@@ -53,7 +53,6 @@ import net.imglib2.type.numeric.RealType;
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeView;
-import org.knime.knip.base.nodes.view.TableCellViewNodeView;
 
 /**
  * {@link NodeFactory} for {@link KNFSTLearnerNodeModel}
@@ -89,7 +88,7 @@ public class KNFSTLearnerNodeFactory<L extends Number & Comparable<L>, T extends
          */
         @Override
         public NodeView<KNFSTLearnerNodeModel<L, T>> createNodeView(final int viewIndex, final KNFSTLearnerNodeModel<L, T> nodeModel) {
-                return new TableCellViewNodeView<KNFSTLearnerNodeModel<L, T>>(nodeModel);
+                return null;
         }
 
         /**
@@ -97,7 +96,7 @@ public class KNFSTLearnerNodeFactory<L extends Number & Comparable<L>, T extends
          */
         @Override
         public int getNrNodeViews() {
-                return 1;
+                return 0;
         }
 
         /**

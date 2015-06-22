@@ -1,9 +1,10 @@
 package org.knime.knip.noveltydetection.nodes.knfstlearner;
 
+import org.knime.core.data.StringValue;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
+import org.knime.core.node.defaultnodesettings.DialogComponentColumnFilter;
 import org.knime.core.node.defaultnodesettings.DialogComponentColumnNameSelection;
 import org.knime.core.node.defaultnodesettings.DialogComponentStringSelection;
-import org.knime.knip.base.data.img.ImgPlusValue;
 
 public class KNFSTLearnerNodeDialog<L extends Comparable<L>> extends DefaultNodeSettingsPane {
 
@@ -12,11 +13,13 @@ public class KNFSTLearnerNodeDialog<L extends Comparable<L>> extends DefaultNode
          */
         @SuppressWarnings("unchecked")
         public KNFSTLearnerNodeDialog() {
-                addDialogComponent(new DialogComponentColumnNameSelection(KNFSTLearnerNodeModel.createImgColumnSelectionModel(), "Column Selection", 0,
-                                ImgPlusValue.class));
-                String[] patchnums = {"1", "2", "4", "8", "16", "32", "64", "128"};
-                addDialogComponent(new DialogComponentStringSelection(KNFSTLearnerNodeModel.createNumPatchesSelectionModel(), "Number of Patches",
-                                patchnums));
+                addDialogComponent(new DialogComponentColumnFilter(KNFSTLearnerNodeModel.createColumnSelectionModel(), 0, false));
 
+                addDialogComponent(new DialogComponentColumnNameSelection(KNFSTLearnerNodeModel.createClassColumnSelectionModel(),
+                                "Select class column", 0, StringValue.class));
+
+                String[] available_Kernels = {"HIK", "EXPHIK"};
+                addDialogComponent(new DialogComponentStringSelection(KNFSTLearnerNodeModel.createKernelFunctionSelectionModel(), "Kernel",
+                                available_Kernels));
         }
 }
