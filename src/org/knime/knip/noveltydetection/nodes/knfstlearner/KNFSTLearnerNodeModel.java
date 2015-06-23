@@ -57,6 +57,7 @@ import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.DoubleValue;
 import org.knime.core.data.NominalValue;
 import org.knime.core.data.StringValue;
 import org.knime.core.data.container.ColumnRearranger;
@@ -144,9 +145,9 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
                                 if (dataSpec.getColumnSpec(i).getType().isCompatible(NominalValue.class)) {
                                         m_classColumn.setStringValue(dataSpec.getColumnSpec(i).getName());
                                         break;
-                                }
+                                } else if (i == 0)
+                                        throw new InvalidSettingsException("Table contains no nominal" + " attribute for classification.");
                         }
-                        throw new InvalidSettingsException("Table contains no nominal" + " attribute for classification.");
                 }
 
                 /*
@@ -160,7 +161,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
                 }
                 */
 
-                return new PortObjectSpec[] {};
+                return new PortObjectSpec[] {new KNFSTPortObjectSpec()};
         }
 
         private PortObjectSpec[] createOutSpec() {
@@ -186,7 +187,6 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
                 boolean oneClass = true;
                 String currentClass = null;
                 for (DataRow row : data) {
-
                         StringValue label = (StringValue) row.getCell(classColIdx);
                         if (currentClass == null) {
                                 currentClass = label.getStringValue();
@@ -197,7 +197,17 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
                 }
 
                 List<String> excludedColumns = m_columnSelection.getExcludeList();
-                ColumnRearranger cr = new ColumnRearranger(data.getDataTableSpec());
+                List<String> includedColumns = m_columnSelection.getIncludeList();
+                DataTableSpec tableSpec = data.getDataTableSpec();
+
+                // Exclude incompatible columns
+                for (int c = 0; c < includedColumns.size(); c++) {
+                        if (!tableSpec.getColumnSpec(includedColumns.get(c)).getType().isCompatible(DoubleValue.class)) {
+                                excludedColumns.add(includedColumns.get(c));
+                        }
+                }
+
+                ColumnRearranger cr = new ColumnRearranger(tableSpec);
 
                 for (String col : excludedColumns)
                         cr.remove(col);
