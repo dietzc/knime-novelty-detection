@@ -1,4 +1,4 @@
-package org.knime.knip.noveltydetection.knfst;
+package org.knime.knip.noveltydetection.knfst.alternative;
 
 import java.io.IOException;
 import java.io.ObjectInput;
