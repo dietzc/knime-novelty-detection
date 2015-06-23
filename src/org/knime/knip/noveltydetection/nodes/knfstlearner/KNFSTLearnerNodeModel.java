@@ -57,6 +57,7 @@ import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.NominalValue;
 import org.knime.core.data.StringValue;
 import org.knime.core.data.container.ColumnRearranger;
 import org.knime.core.node.BufferedDataTable;
@@ -69,6 +70,7 @@ import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelFilterString;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.core.node.port.PortObject;
+import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
 import org.knime.knip.base.data.img.ImgPlusCell;
 import org.knime.knip.noveltydetection.knfst.EXPHIKKernel;
@@ -92,6 +94,7 @@ import org.knime.knip.noveltydetection.knfst.OneClassKNFST;
 @SuppressWarnings("deprecation")
 public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel {
 
+        static final int DATA_INPORT = 0;
         static final String[] BACKGROUND_OPTIONS = new String[] {"Min Value of Result", "Max Value of Result", "Zero", "Source"};
 
         /**
@@ -130,13 +133,37 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
          * {@inheritDoc}
          */
         @Override
-        protected DataTableSpec[] configure(final DataTableSpec[] inSpecs) throws InvalidSettingsException {
-                // TODO check inspec for img value column
+        protected PortObjectSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
 
-                return createOutSpec();
+                DataTableSpec dataSpec = (DataTableSpec) inSpecs[DATA_INPORT];
+
+                // Check class
+                DataColumnSpec colSpec = dataSpec.getColumnSpec(m_classColumn.getStringValue());
+                if (colSpec == null || !colSpec.getType().isCompatible(NominalValue.class)) {
+                        for (int i = dataSpec.getNumColumns() - 1; i >= 0; i--) {
+                                if (dataSpec.getColumnSpec(i).getType().isCompatible(NominalValue.class)) {
+                                        m_classColumn.setStringValue(dataSpec.getColumnSpec(i).getName());
+                                        break;
+                                }
+                        }
+                        throw new InvalidSettingsException("Table contains no nominal" + " attribute for classification.");
+                }
+
+                /*
+                // Check input columns later used for training
+                for (int i = 0; i < dataSpec.getNumColumns(); i++) {
+                        if (!(dataSpec.getColumnSpec(i).getType().isCompatible(DoubleValue.class)
+                                        || dataSpec.getColumnSpec(i).getType().isCompatible(IntValue.class) || dataSpec.getColumnSpec(i).getType()
+                                        .isCompatible(LongValue.class))) {
+                                throw new InvalidSettingsException("The features used for training need to be numeric");
+                        }
+                }
+                */
+
+                return new PortObjectSpec[] {};
         }
 
-        private DataTableSpec[] createOutSpec() {
+        private PortObjectSpec[] createOutSpec() {
                 DataColumnSpec sourceImgSpec = new DataColumnSpecCreator("Source Image", ImgPlusCell.TYPE).createSpec();
                 DataColumnSpec patchSpec = new DataColumnSpecCreator("Patch", ImgPlusCell.TYPE).createSpec();
 
