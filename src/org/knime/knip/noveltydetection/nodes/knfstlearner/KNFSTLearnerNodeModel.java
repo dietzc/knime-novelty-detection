@@ -54,7 +54,6 @@ import java.util.List;
 import net.imglib2.type.numeric.RealType;
 
 import org.knime.core.data.DataColumnSpec;
-import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.DoubleValue;
@@ -73,7 +72,6 @@ import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
-import org.knime.knip.base.data.img.ImgPlusCell;
 import org.knime.knip.noveltydetection.knfst.EXPHIKKernel;
 import org.knime.knip.noveltydetection.knfst.HIKKernel;
 import org.knime.knip.noveltydetection.knfst.KNFST;
@@ -92,7 +90,6 @@ import org.knime.knip.noveltydetection.knfst.OneClassKNFST;
  * @param <L>
  * @param <T>
  */
-@SuppressWarnings("deprecation")
 public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel {
 
         static final int DATA_INPORT = 0;
@@ -164,18 +161,11 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
                 return new PortObjectSpec[] {new KNFSTPortObjectSpec()};
         }
 
-        private PortObjectSpec[] createOutSpec() {
-                DataColumnSpec sourceImgSpec = new DataColumnSpecCreator("Source Image", ImgPlusCell.TYPE).createSpec();
-                DataColumnSpec patchSpec = new DataColumnSpecCreator("Patch", ImgPlusCell.TYPE).createSpec();
-
-                return new DataTableSpec[] {new DataTableSpec(sourceImgSpec, patchSpec)};
-        }
-
         /**
          * {@inheritDoc}
          */
         @Override
-        @SuppressWarnings({"unchecked"})
+        @SuppressWarnings({})
         protected PortObject[] execute(final PortObject[] inData, final ExecutionContext exec) throws Exception {
 
                 BufferedDataTable data = (BufferedDataTable) inData[0];
