@@ -219,7 +219,11 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
                 final KernelCalculator kernelCalculator = new KernelCalculator(training, kernelFunction);
 
                 if (oneClass) {
-                        knfst = new OneClassKNFST(kernelCalculator);
+                        try {
+                                knfst = new OneClassKNFST(kernelCalculator);
+                        } catch (Exception e) {
+                                System.out.println(e.getMessage());
+                        }
                 } else {
                         knfst = new MultiClassKNFST(kernelCalculator, labels);
                 }

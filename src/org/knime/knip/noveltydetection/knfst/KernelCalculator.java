@@ -27,6 +27,13 @@ public class KernelCalculator implements Externalizable {
                 m_kernelFunction = kernelFunction;
         }
 
+        public KernelCalculator(double[][] trainingData, KernelFunction kernelFunction) {
+                m_trainingData = trainingData;
+                m_rowCount = trainingData.length;
+                m_colCount = trainingData[0].length;
+                m_kernelFunction = kernelFunction;
+        }
+
         /* Returns kernel matrix containing similarities of the training data
          * Output:  mxm matrix containing similarities of the training data
          */
