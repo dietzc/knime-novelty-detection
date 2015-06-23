@@ -95,9 +95,10 @@ public class KernelCalculator implements Externalizable {
 
                 final Iterator<DataRow> iterator = table.iterator();
 
-                for (int r = 0; r < table.getRowCount(); r++) {
+                for (int r = 0; iterator.hasNext(); r++) {
+                        DataRow next = iterator.next();
                         for (int c = 0; c < table.getDataTableSpec().getNumColumns(); c++) {
-                                data[r][c] = ((DoubleValue) iterator.next().getCell(c)).getDoubleValue();
+                                data[r][c] = ((DoubleValue) next.getCell(c)).getDoubleValue();
                         }
                 }
 
