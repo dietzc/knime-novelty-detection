@@ -6,18 +6,18 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 
-import org.jblas.ComplexDoubleMatrix;
-import org.jblas.DoubleMatrix;
-import org.jblas.Eigen;
-import org.jblas.MatrixFunctions;
-import org.jblas.Singular;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.jblas.ranges.IntervalRange;
 import org.knime.core.node.BufferedDataTable;
 
 public abstract class KNFST implements Externalizable {
         protected KernelCalculator m_kernel;
-        protected DoubleMatrix m_projection;
-        protected DoubleMatrix m_targetPoints;
+        protected RealMatrix m_projection;
+        protected RealMatrix m_targetPoints;
 
         public KNFST(KernelCalculator kernel) {
                 m_kernel = kernel;
@@ -25,7 +25,7 @@ public abstract class KNFST implements Externalizable {
 
         public abstract double[] scoreTestData(BufferedDataTable test);
 
-        public static DoubleMatrix projection(final DoubleMatrix kernelMatrix, final String[] labels) {
+        public static RealMatrix projection(final RealMatrix kernelMatrix, final String[] labels) {
 
                 ArrayList<ClassWrapper> classes = ClassWrapper.classes(labels);
 
@@ -42,13 +42,15 @@ public abstract class KNFST implements Externalizable {
                 }
 
                 // calculate weights of orthonormal basis in kernel space
-                final DoubleMatrix centeredK = centerKernelMatrix(kernelMatrix);
-                final DoubleMatrix[] eig = Eigen.symmetricEigenvectors(centeredK);
+                final RealMatrix centeredK = centerKernelMatrix(kernelMatrix);
+
+                EigenDecomposition eig = new EigenDecomposition(centeredK);
+                //final RealMatrix[] eig = Eigen.symmetricEigenvectors(centeredK);
 
                 //System.out.println("eig:");
                 //test.printMatrix(eig[0]);
                 //test.printMatrix(eig[1]);
-                final double[] basisValues = eig[1].diag().toArray();
+                final double[] basisValues = eig.getRealEigenvalues();
 
                 // get number and position of nonzero basis values
                 final ArrayList<Integer> indices = new ArrayList<Integer>();
@@ -68,51 +70,59 @@ public abstract class KNFST implements Externalizable {
                 }
 
                 // get basis vectors with nonzero basis values
-                DoubleMatrix basisvecs = eig[0].getColumns(intIndices);
+                double[][] basisvecsData = new double[eig.getV().getRowDimension()][intIndices[intIndices.length - 1]];
+                eig.getV().copySubMatrix(0, eig.getV().getRowDimension(), 0, intIndices[intIndices.length - 1], basisvecsData);
+                RealMatrix basisvecs = MatrixUtils.createRealMatrix(basisvecsData);
+                // RealMatrix basisvecs = eig[0].getColumns(intIndices);
                 // create diagonal matrix with nonzero basis values
-                final DoubleMatrix basisvecsValues = DoubleMatrix.diag(new DoubleMatrix(nonzeroBasisValues));
+                final RealMatrix basisvecsValues = MatrixUtils.createRealDiagonalMatrix(nonzeroBasisValues);
 
                 //test.printMatrix(basisvecs);
                 //test.printMatrix(basisvecsValues);
 
-                basisvecs = basisvecs.mmul(basisvecsValues);
+                basisvecs = basisvecs.multiply(basisvecsValues);
 
                 // calculate transformation T of within class scatter Sw:
                 // T= B'*K*(I-L) and L a block matrix
-                DoubleMatrix L = DoubleMatrix.zeros(kernelMatrix.rows, kernelMatrix.columns);
+                RealMatrix L = kernelMatrix.createMatrix(kernelMatrix.getRowDimension(), kernelMatrix.getColumnDimension());
                 int l = 0;
                 int count = 0;
+                int start = 0;
                 for (int k = 0; k < classes.size(); k++) {
                         for (; l < labels.length && labels[l].equals(classes.get(k).getName()); l++) {
                                 count++;
                         }
                         IntervalRange rrange = new IntervalRange(l - count, l);
                         IntervalRange crange = new IntervalRange(l - count, l);
-                        L = L.put(rrange, crange, DoubleMatrix.ones(count, count).mul(1.0 / (double) classes.get(k).getCount()));
+                        L.setSubMatrix(MatrixFunctions.ones(count, count).scalarMultiply(1.0 / (double) classes.get(k).getCount()).getData(), start,
+                                        start);
+                        start = count;
                         count = 0;
                 }
 
                 // need Matrix M with all entries 1/m to modify basisvecs which allows usage of 
                 // uncentered kernel values (eye(size(M)).M)*basisvecs
-                DoubleMatrix M = DoubleMatrix.ones(kernelMatrix.columns, kernelMatrix.columns).mul(1.0 / kernelMatrix.columns);
+                RealMatrix M = MatrixFunctions.ones(kernelMatrix.getColumnDimension(), kernelMatrix.getColumnDimension()).scalarMultiply(
+                                1.0 / kernelMatrix.getColumnDimension());
 
                 // compute helper matrix H
-                DoubleMatrix H = DoubleMatrix.eye(M.columns).sub(M).mmul(basisvecs).transpose();
-                DoubleMatrix K = kernelMatrix.mmul(DoubleMatrix.eye(kernelMatrix.columns).sub(L));
-                H = H.mmul(K);
+                RealMatrix H = MatrixUtils.createRealIdentityMatrix(M.getColumnDimension()).subtract(M).multiply(basisvecs).transpose();
+                RealMatrix K = kernelMatrix.multiply(MatrixUtils.createRealIdentityMatrix(kernelMatrix.getColumnDimension()).subtract(L));
+                H = H.multiply(K);
 
                 // T = H*H' = B'*Sw*B with B=basisvecs
-                DoubleMatrix T = H.mmul(H.transpose());
+                RealMatrix T = H.multiply(H.transpose());
 
                 //calculate weights for null space
-                DoubleMatrix eigenvecs = nullspace(T);
+                RealMatrix eigenvecs = MatrixFunctions.nullspace(T);
 
-                if (eigenvecs.getColumns() < 1) {
-                        ComplexDoubleMatrix[] eigenComp = Eigen.eigenvectors(T);
-                        DoubleMatrix eigenvals = eigenComp[1].getReal().diag();
-                        eigenvecs = eigenComp[0].getReal();
-                        int minId = MatrixFunctions.abs(eigenvals).argmin();
-                        eigenvecs = eigenvecs.getColumn(minId);
+                if (eigenvecs.getColumnDimension() < 1) {
+                        EigenDecomposition eigenComp = new EigenDecomposition(T);
+                        double[] eigenvals = eigenComp.getRealEigenvalues();
+                        eigenvecs = eigenComp.getV();
+                        int minId = MatrixFunctions.argmin(MatrixFunctions.abs(eigenvals));
+                        double[][] eigenvecsData = {eigenvecs.getColumn(minId)};
+                        eigenvecs = MatrixUtils.createRealMatrix(eigenvecsData);
                 }
 
                 //System.out.println("eigenvecs:");
@@ -120,53 +130,37 @@ public abstract class KNFST implements Externalizable {
 
                 // calculate null space projection
                 //DoubleMatrix proj = DoubleMatrix.eye(M.getColumns()).sub(M).mmul(basisvecs);
-                DoubleMatrix h1 = DoubleMatrix.eye(M.getColumns()).sub(M);
+                RealMatrix h1 = MatrixUtils.createRealIdentityMatrix(M.getColumnDimension()).subtract(M);
                 //System.out.println("h1:");
                 //test.printMatrix(h1);
                 //System.out.println("basisvecs:");
                 //test.printMatrix(basisvecs);
-                DoubleMatrix proj = h1.mmul(basisvecs);
+                RealMatrix proj = h1.multiply(basisvecs);
                 //System.out.println("proj:");
                 //test.printMatrix(proj);
-                proj = proj.mmul(eigenvecs);
+                proj = proj.multiply(eigenvecs);
 
                 return proj;
         }
 
-        private static DoubleMatrix centerKernelMatrix(DoubleMatrix kernelMatrix) {
+        private static RealMatrix centerKernelMatrix(RealMatrix kernelMatrix) {
                 // get size of kernelMatrix
-                int n = kernelMatrix.rows;
+                int n = kernelMatrix.getRowDimension();
 
                 // get mean values for each row/column
-                DoubleMatrix columnMeans = kernelMatrix.columnMeans();
-                double matrixMean = kernelMatrix.mean();
+                RealVector columnMeans = MatrixFunctions.columnMeans(kernelMatrix);
+                double matrixMean = MatrixFunctions.mean(kernelMatrix);
 
-                DoubleMatrix centeredKernelMatrix = kernelMatrix;
+                RealMatrix centeredKernelMatrix = kernelMatrix;
 
                 for (int k = 0; k < n; k++) {
-                        centeredKernelMatrix.putRow(k, centeredKernelMatrix.getRow(k).sub(columnMeans));
-                        centeredKernelMatrix.putColumn(k, centeredKernelMatrix.getColumn(k).sub(columnMeans.transpose()));
+                        centeredKernelMatrix.setRowVector(k, centeredKernelMatrix.getRowVector(k).subtract(columnMeans));
+                        centeredKernelMatrix.setColumnVector(k, centeredKernelMatrix.getColumnVector(k).subtract(columnMeans));
                 }
 
-                centeredKernelMatrix = centeredKernelMatrix.add(matrixMean);
+                centeredKernelMatrix = centeredKernelMatrix.scalarAdd(matrixMean);
 
                 return centeredKernelMatrix;
-        }
-
-        public static DoubleMatrix nullspace(DoubleMatrix matrix) {
-                DoubleMatrix[] svd = Singular.fullSVD(matrix);
-                Test.printMatrix(matrix);
-                Test.printMatrix(svd[1]);
-                Test.printMatrix(svd[2]);
-                int rank = 0;
-                double[] singularvalues = svd[1].toArray();
-                for (; rank < singularvalues.length && singularvalues[rank] > 1e-12; rank++)
-                        ;
-                int[] cindices = new int[svd[2].columns - rank];
-                for (int i = 0; i < svd[2].columns - rank; i++)
-                        cindices[i] = rank + i;
-                DoubleMatrix basis = svd[2].getColumns(cindices);
-                return basis;
         }
 
         // Methods of Externalizable interface
@@ -184,11 +178,12 @@ public abstract class KNFST implements Externalizable {
                         // columns
                         final int colsProj = arg0.readInt();
                         // data
-                        final double[] projData = new double[arg0.readInt()];
-                        for (int d = 0; d < projData.length; d++)
-                                projData[d] = arg0.readDouble();
+                        final double[][] projData = new double[rowsProj][colsProj];
+                        for (int r = 0; r < rowsProj; r++)
+                                for (int c = 0; c < colsProj; c++)
+                                        projData[r][c] = arg0.readDouble();
                         // Matrix construction
-                        m_projection = new DoubleMatrix(rowsProj, colsProj, projData);
+                        m_targetPoints = MatrixUtils.createRealMatrix(projData);
 
                         // read targetPoints
                         // rows
@@ -196,11 +191,12 @@ public abstract class KNFST implements Externalizable {
                         // columns
                         final int colsTar = arg0.readInt();
                         // data
-                        final double[] tarData = new double[arg0.readInt()];
-                        for (int d = 0; d < tarData.length; d++)
-                                tarData[d] = arg0.readDouble();
+                        final double[][] tarData = new double[rowsTar][colsTar];
+                        for (int r = 0; r < rowsTar; r++)
+                                for (int c = 0; c < colsTar; c++)
+                                        tarData[r][c] = arg0.readDouble();
                         // Matrix construction
-                        m_targetPoints = new DoubleMatrix(rowsTar, colsTar, tarData);
+                        m_targetPoints = MatrixUtils.createRealMatrix(tarData);
 
                 } catch (InstantiationException | IllegalAccessException e) {
                         // TODO Auto-generated catch block
@@ -215,38 +211,50 @@ public abstract class KNFST implements Externalizable {
 
                 // write projection
                 // rows
-                arg0.writeInt(m_projection.getRows());
+                arg0.writeInt(m_projection.getRowDimension());
                 // columns
-                arg0.writeInt(m_projection.getColumns());
+                arg0.writeInt(m_projection.getColumnDimension());
                 // data
-                arg0.writeInt(m_projection.getLength());
-                final double[] projData = m_projection.toArray();
-                for (double d : projData)
-                        arg0.writeDouble(d);
+                final double[][] projData = m_projection.getData();
+                for (double[] row : projData)
+                        for (double cell : row)
+                                arg0.writeDouble(cell);
 
                 // write targetPoints
                 // rows
-                arg0.writeInt(m_targetPoints.getRows());
-                // columns
-                arg0.writeInt(m_targetPoints.getColumns());
+                arg0.writeInt(m_targetPoints.getRowDimension());
+                //columns
+                arg0.writeInt(m_targetPoints.getColumnDimension());
                 // data
-                arg0.writeInt(m_targetPoints.getLength());
-                final double[] tarData = m_targetPoints.toArray();
-                for (double d : tarData)
-                        arg0.writeDouble(d);
+                final double[][] tarData = m_targetPoints.getData();
+                for (double[] row : tarData)
+                        for (double cell : row)
+                                arg0.writeDouble(cell);
         }
 
         public static void main(String[] args) {
-                String[] labels = {"A", "A", "A", "B", "B", "C"};
+                double[][] data = { {1, 2, 3, 4}, {1, 2, 3, 4}, {1, 2, 3, 4}, {1, 2, 3, 4}};
+                RealMatrix A = MatrixUtils.createRealMatrix(data);
+                EigenDecomposition eig = new EigenDecomposition(A);
+                RealMatrix V = eig.getV();
+                RealMatrix D = eig.getD();
+                SingularValueDecomposition svd = new SingularValueDecomposition(A);
+                RealMatrix svdV = svd.getV();
+                RealMatrix svdS = svd.getS();
+                int rank = svd.getRank();
+                RealMatrix ones = MatrixFunctions.ones(3, 4);
+                System.out.println("done");
+                /*String[] labels = {"A", "A", "A", "B", "B", "C"};
                 ArrayList<ClassWrapper> classes = ClassWrapper.classes(labels);
                 double[] elements = {1, 1, 1, 2, 2, 2, 3, 3, 3};
-                DoubleMatrix A = new DoubleMatrix(3, 3, elements);
-                DoubleMatrix L = DoubleMatrix.zeros(6, 6);
-                DoubleMatrix Z = nullspace(A);
+                RealMatrix A = new DoubleMatrix(3, 3, elements);
+                RealMatrix L = DoubleMatrix.zeros(6, 6);
+                RealMatrix Z = nullspace(A);
                 for (int i = 0; i < 9; i++)
                         System.out.println(A.get(i));
 
                 Test.printMatrix(A);
+                */
                 /*
                 DoubleMatrix[] eig = Eigen.symmetricEigenvectors(A);
                 test.printMatrix(eig[0]);
