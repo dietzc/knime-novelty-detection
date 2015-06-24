@@ -11,7 +11,6 @@ import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.jblas.ranges.IntervalRange;
 import org.knime.core.node.BufferedDataTable;
 
 public abstract class KNFST implements Externalizable {
@@ -92,8 +91,6 @@ public abstract class KNFST implements Externalizable {
                         for (; l < labels.length && labels[l].equals(classes.get(k).getName()); l++) {
                                 count++;
                         }
-                        IntervalRange rrange = new IntervalRange(l - count, l);
-                        IntervalRange crange = new IntervalRange(l - count, l);
                         L.setSubMatrix(MatrixFunctions.ones(count, count).scalarMultiply(1.0 / (double) classes.get(k).getCount()).getData(), start,
                                         start);
                         start = count;
