@@ -60,4 +60,24 @@ public class MatrixFunctions {
                 }
                 return index;
         }
+
+        public static RealMatrix rowMins(RealMatrix matrix) {
+                RealMatrix rowMins = MatrixUtils.createRealMatrix(matrix.getRowDimension(), 1);
+
+                for (int r = 0; r < matrix.getRowDimension(); r++) {
+                        rowMins.setEntry(r, 0, matrix.getRowVector(r).getMinValue());
+                }
+
+                return rowMins;
+        }
+
+        public static RealMatrix sqrt(RealMatrix matrix) {
+                double[][] data = matrix.getData();
+                for (int r = 0; r < matrix.getRowDimension(); r++) {
+                        for (int c = 0; c < matrix.getColumnDimension(); c++) {
+                                data[r][c] = Math.sqrt(data[r][c]);
+                        }
+                }
+                return MatrixUtils.createRealMatrix(data);
+        }
 }

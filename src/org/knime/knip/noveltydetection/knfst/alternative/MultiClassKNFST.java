@@ -5,8 +5,8 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 
-import org.jblas.DoubleMatrix;
-import org.jblas.MatrixFunctions;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.jblas.ranges.IntervalRange;
 import org.knime.core.node.BufferedDataTable;
 
@@ -18,7 +18,7 @@ public class MultiClassKNFST extends KNFST {
                 super(kernel);
                 m_labels = labels;
 
-                DoubleMatrix kernelMatrix = kernel.kernelize();
+                RealMatrix kernelMatrix = kernel.kernelize();
 
                 // obtain unique class labels
                 ArrayList<ClassWrapper> classes = ClassWrapper.classes(labels);
@@ -27,13 +27,14 @@ public class MultiClassKNFST extends KNFST {
                 this.m_projection = projection(kernelMatrix, labels);
 
                 // calculate target points ( = projections of training data into the null space)
-                m_targetPoints = DoubleMatrix.zeros(classes.size(), m_projection.getColumns());
+                m_targetPoints = MatrixUtils.createRealMatrix(classes.size(), m_projection.getColumnDimension());
                 int n = 0;
                 int nOld = 0;
                 for (int c = 0; c < classes.size(); c++) {
                         n += classes.get(c).getCount();
                         final IntervalRange interval = new IntervalRange(nOld, n - 1);
-                        m_targetPoints.putRow(c, kernelMatrix.getRows(interval).mmul(m_projection).columnMeans());
+                        m_targetPoints.setRowVector(c, MatrixFunctions.columnMeans(kernelMatrix.getSubMatrix(nOld, n - 1, 0,
+                                        kernelMatrix.getColumnDimension()).multiply(m_projection)));
                         nOld = n;
                 }
         }
@@ -41,28 +42,27 @@ public class MultiClassKNFST extends KNFST {
         @Override
         public double[] scoreTestData(BufferedDataTable test) {
                 // calculate nxm kernel matrix containing similarities between n training samples and m test samples
-                DoubleMatrix kernelMatrix = m_kernel.kernelize(test);
+                RealMatrix kernelMatrix = m_kernel.kernelize(test);
 
                 // projected test samples:
-                DoubleMatrix projectionVectors = kernelMatrix.transpose().mmul(m_projection);
+                RealMatrix projectionVectors = kernelMatrix.transpose().multiply(m_projection);
 
                 //squared euclidean distances to target points:
-                DoubleMatrix squared_distances = squared_euclidean_distances(projectionVectors, m_targetPoints);
+                RealMatrix squared_distances = squared_euclidean_distances(projectionVectors, m_targetPoints);
 
                 // novelty scores as minimum distance to one of the target points
-                DoubleMatrix scoreVector = MatrixFunctions.sqrt(squared_distances.rowMins());
+                RealMatrix scoreVector = MatrixFunctions.sqrt(MatrixFunctions.rowMins(squared_distances));
 
-                return scoreVector.toArray();
+                return scoreVector.getData()[0];
         }
 
-        private DoubleMatrix squared_euclidean_distances(DoubleMatrix x, DoubleMatrix y) {
-                DoubleMatrix distmat = DoubleMatrix.zeros(x.getRows(), y.getRows());
+        private RealMatrix squared_euclidean_distances(RealMatrix x, RealMatrix y) {
+                RealMatrix distmat = MatrixUtils.createRealMatrix(x.getRowDimension(), y.getRowDimension());
 
-                for (int i = 0; i < x.getRows(); i++) {
-                        for (int j = 0; j < y.getRows(); j++) {
-                                DoubleMatrix buff = x.getRow(i).sub(y.getRow(j));
-                                int[] indices = {i, j};
-                                distmat.put(indices, buff.mmul(buff.transpose()));
+                for (int i = 0; i < x.getRowDimension(); i++) {
+                        for (int j = 0; j < y.getRowDimension(); j++) {
+                                RealMatrix buff = x.getRowMatrix(i).subtract(y.getRowMatrix(j));
+                                distmat.setSubMatrix(buff.multiply(buff.transpose()).getData(), i, j);
                         }
                 }
 
