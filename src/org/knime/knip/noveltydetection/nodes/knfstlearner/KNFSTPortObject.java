@@ -33,6 +33,10 @@ public class KNFSTPortObject implements PortObject {
                 m_knfstModel = knfst;
         }
 
+        public KNFST getKNFST() {
+                return m_knfstModel;
+        }
+
         public static PortObjectSerializer<KNFSTPortObject> getPortObjectSerializer() {
                 return new PortObjectSerializer<KNFSTPortObject>() {
 

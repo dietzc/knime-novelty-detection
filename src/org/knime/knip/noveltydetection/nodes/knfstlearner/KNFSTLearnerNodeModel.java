@@ -222,7 +222,8 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
                         try {
                                 knfst = new OneClassKNFST(kernelCalculator);
                         } catch (Exception e) {
-                                System.out.println(e.getMessage());
+                                e.printStackTrace();
+                                throw e;
                         }
                 } else {
                         knfst = new MultiClassKNFST(kernelCalculator, labels);
