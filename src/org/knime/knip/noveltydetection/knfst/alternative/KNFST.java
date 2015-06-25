@@ -61,18 +61,19 @@ public abstract class KNFST implements Externalizable {
 
                 // convert ArrayList<Integer> indices into int[] intIndices
                 // create Array with nonzero resized basis values
-                final int[] intIndices = new int[indices.size()];
+                final int[] colIndices = new int[indices.size()];
                 final double[] nonzeroBasisValues = new double[indices.size()];
                 for (int i = 0; i < indices.size(); i++) {
                         nonzeroBasisValues[i] = 1 / Math.sqrt(basisValues[indices.get(i)]);
-                        intIndices[i] = indices.get(i);
+                        colIndices[i] = indices.get(i);
                 }
+                final int[] rowIndices = new int[eig.getV().getRowDimension()];
+                for (int i = 0; i < eig.getV().getRowDimension(); i++)
+                        rowIndices[i] = i;
 
                 // get basis vectors with nonzero basis values
-                double[][] basisvecsData = new double[eig.getV().getRowDimension()][intIndices[intIndices.length - 1]];
-                eig.getV().copySubMatrix(0, eig.getV().getRowDimension(), 0, intIndices[intIndices.length - 1], basisvecsData);
-                RealMatrix basisvecs = MatrixUtils.createRealMatrix(basisvecsData);
-                // RealMatrix basisvecs = eig[0].getColumns(intIndices);
+                RealMatrix basisvecs = eig.getV().getSubMatrix(rowIndices, colIndices);
+
                 // create diagonal matrix with nonzero basis values
                 final RealMatrix basisvecsValues = MatrixUtils.createRealDiagonalMatrix(nonzeroBasisValues);
 

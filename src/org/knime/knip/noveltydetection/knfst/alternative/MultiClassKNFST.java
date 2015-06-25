@@ -34,7 +34,7 @@ public class MultiClassKNFST extends KNFST {
                         n += classes.get(c).getCount();
                         final IntervalRange interval = new IntervalRange(nOld, n - 1);
                         m_targetPoints.setRowVector(c, MatrixFunctions.columnMeans(kernelMatrix.getSubMatrix(nOld, n - 1, 0,
-                                        kernelMatrix.getColumnDimension()).multiply(m_projection)));
+                                        kernelMatrix.getColumnDimension() - 1).multiply(m_projection)));
                         nOld = n;
                 }
         }
