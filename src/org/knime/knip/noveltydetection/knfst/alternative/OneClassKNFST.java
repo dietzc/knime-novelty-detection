@@ -11,14 +11,14 @@ public class OneClassKNFST extends KNFST {
                 super(kernel);
                 System.out.println("1");
                 // get number of training samples
-                int n = m_kernel.getNumTrainingSamples();
                 RealMatrix kernelMatrix = m_kernel.kernelize();
+                final int n = kernelMatrix.getRowDimension();
                 System.out.println("2");
 
                 // include dot products of training samples and the origin in feature space (these dot products are always zero!)
                 final RealMatrix k = MatrixFunctions.concatVertically(
-                                MatrixFunctions.concatHorizontally(kernelMatrix, MatrixUtils.createRealMatrix(n, 1)),
-                                MatrixUtils.createRealMatrix(1, n + 1));
+                                MatrixFunctions.concatHorizontally(kernelMatrix, MatrixUtils.createRealMatrix(kernelMatrix.getRowDimension(), 1)),
+                                MatrixUtils.createRealMatrix(1, kernelMatrix.getColumnDimension() + 1));
                 System.out.println("3");
 
                 // create one-class labels + a different label for the origin
