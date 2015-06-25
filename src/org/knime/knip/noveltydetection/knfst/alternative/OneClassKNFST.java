@@ -1,8 +1,8 @@
 package org.knime.knip.noveltydetection.knfst.alternative;
 
-import org.jblas.DoubleMatrix;
-import org.jblas.MatrixFunctions;
-import org.jblas.ranges.IntervalRange;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
 import org.knime.core.node.BufferedDataTable;
 
 public class OneClassKNFST extends KNFST {
@@ -12,12 +12,13 @@ public class OneClassKNFST extends KNFST {
                 System.out.println("1");
                 // get number of training samples
                 int n = m_kernel.getNumTrainingSamples();
-                DoubleMatrix kernelMatrix = m_kernel.kernelize();
+                RealMatrix kernelMatrix = m_kernel.kernelize();
                 System.out.println("2");
 
                 // include dot products of training samples and the origin in feature space (these dot products are always zero!)
-                final DoubleMatrix k = DoubleMatrix.concatVertically(DoubleMatrix.concatHorizontally(kernelMatrix, DoubleMatrix.zeros(n)),
-                                DoubleMatrix.zeros(n + 1).transpose());
+                final RealMatrix k = MatrixFunctions.concatVertically(
+                                MatrixFunctions.concatHorizontally(kernelMatrix, MatrixUtils.createRealMatrix(n, 1)),
+                                MatrixUtils.createRealMatrix(1, n + 1));
                 System.out.println("3");
 
                 // create one-class labels + a different label for the origin
@@ -26,29 +27,30 @@ public class OneClassKNFST extends KNFST {
                         labels[l] = (l == n) ? "0" : "1";
 
                 // get model parameters
-                final DoubleMatrix projection = projection(k, labels);
+                final RealMatrix projection = projection(k, labels);
                 System.out.println("4");
                 int[] indices = new int[n];
                 for (int i = 0; i < n; i++)
                         indices[i] = i;
-                this.m_targetPoints = k.getRows(indices).mmul(projection).columnMeans();
+                this.m_targetPoints = MatrixUtils.createRowRealMatrix(MatrixFunctions.columnMeans(
+                                k.getSubMatrix(0, n, 0, k.getColumnDimension() - 1).multiply(projection)).toArray());
                 System.out.println("5");
-                this.m_projection = projection.getRows(new IntervalRange(0, n - 1));
+                this.m_projection = projection.getSubMatrix(0, n - 1, 0, projection.getColumnDimension() - 1);
         }
 
         @Override
         public double[] scoreTestData(BufferedDataTable test) {
 
-                final DoubleMatrix kernelMatrix = m_kernel.kernelize(test);
+                final RealMatrix kernelMatrix = m_kernel.kernelize(test);
 
                 // projected test samples:
-                final DoubleMatrix projectionVectors = kernelMatrix.transpose().mmul(m_projection);
+                final RealMatrix projectionVectors = kernelMatrix.transpose().multiply(m_projection);
 
                 // differences to the target value:
-                DoubleMatrix diff = projectionVectors.sub(DoubleMatrix.ones(kernelMatrix.getColumns(), 1).mmul(m_targetPoints));
+                RealMatrix diff = projectionVectors.subtract(MatrixFunctions.ones(kernelMatrix.getColumnDimension(), 1).multiply(m_targetPoints));
 
                 // distances to the target value:
-                DoubleMatrix scoresVector = MatrixFunctions.sqrt(diff.mul(diff).rowSums());
+                RealVector scoresVector = MatrixFunctions.sqrt(MatrixFunctions.rowSums(MatrixFunctions.multiplyElementWise(diff, diff)));
 
                 return scoresVector.toArray();
         }
