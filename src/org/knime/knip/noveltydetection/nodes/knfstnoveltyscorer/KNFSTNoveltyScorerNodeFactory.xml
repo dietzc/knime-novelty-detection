@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
+<knimeNode type="Manipulator" icon="cropper.png">
+	<name>Patcher</name>
+	<shortDescription>
+		Crops segments, given by a labeling, of an image.
+	</shortDescription>
+
+	<fullDescription>
+		<intro>
+			Crops segments, given by a labeling, of an image. The pixels
+			that are
+			not defined by the according segment a filled either with
+			the maximum,
+			minimum pixel value or zero.
+
+			Two cases:
+			<ul>
+				<li>No additional Image: BitMasks of the ROIs will be
+					extracted.
+				</li>
+				<li>
+					Additional Image: ROI will be filled with the values of the
+					provided image.
+				</li>
+			</ul>
+		</intro>
+		<tab name="Options">
+
+			<option name="Labeling Column">Labeling representing the Region of Interests
+				(ROIs) to be cropped.
+			</option>
+
+			<option name="Image Column (optional)">How the image pixel will be organised in the
+				memory. May have impact on the runtime of algorithms.
+			</option>
+			<option name="Background">
+				As we crop an labeling into a rectangular
+				bounding box image, some
+				pixels may not be covered by the ROI. Select the value of these
+				pixels.
+				<ul>
+					<li>Minimum value of result image</li>
+					<li>Maximum value of result image</li>
+					<li>Set value to zero</li>
+				</ul>
+			</option>
+		</tab>
+		<tab name="Segment Label Filter">
+			<option name="Filter on segment labels">
+				Only labels which hold
+				the given rule considered
+				during the calculation.
+			</option>
+			<option name="Append labels of overlapping segments">
+				If true, the labels of overlapping segments will
+				be appended in an additional column (';'-separated).
+			</option>
+			<option name="Overlapping segments do NOT need to completely overlap">
+				If selected, segments will also be counted as
+				overlapping, if so don't
+				overlap completely.
+			</option>
+
+			<option name="Filter on overlapping segment labels">
+				Only the labels that comply with the specified
+				rules will appear in the list of overlapping labels.
+			</option>
+		</tab>
+	</fullDescription>
+	<ports>
+		<inPort index="0" name="Images">Images and corresponding Labeling in
+			same column
+		</inPort>
+		<outPort index="0" name="Cropped Segments">Cropped Segments</outPort>
+	</ports>
+	<views>
+		<view name="Table Cell View" index="0">Cropped Segments</view>
+	</views>
+</knimeNode>
