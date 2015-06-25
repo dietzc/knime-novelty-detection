@@ -59,11 +59,11 @@ public class MatrixFunctions {
                 return index;
         }
 
-        public static RealMatrix rowMins(final RealMatrix matrix) {
-                final RealMatrix rowMins = MatrixUtils.createRealMatrix(matrix.getRowDimension(), 1);
+        public static RealVector rowMins(final RealMatrix matrix) {
+                final RealVector rowMins = MatrixUtils.createRealVector(new double[matrix.getRowDimension()]);
 
                 for (int r = 0; r < matrix.getRowDimension(); r++) {
-                        rowMins.setEntry(r, 0, matrix.getRowVector(r).getMinValue());
+                        rowMins.setEntry(r, matrix.getRowVector(r).getMinValue());
                 }
 
                 return rowMins;
@@ -77,6 +77,13 @@ public class MatrixFunctions {
                         }
                 }
                 return MatrixUtils.createRealMatrix(data);
+        }
+
+        public static RealVector sqrt(final RealVector vector) {
+                final RealVector result = vector.copy();
+                for (int e = 0; e < result.getDimension(); e++)
+                        result.setEntry(e, Math.sqrt(result.getEntry(e)));
+                return result;
         }
 
         public static RealMatrix multiplyElementWise(final RealMatrix matrix1, final RealMatrix matrix2) {
@@ -102,13 +109,6 @@ public class MatrixFunctions {
                                 rowSums.addToEntry(r, cell);
                 }
                 return rowSums;
-        }
-
-        public static RealVector sqrt(final RealVector vector) {
-                final RealVector result = vector.copy();
-                for (int e = 0; e < result.getDimension(); e++)
-                        result.setEntry(e, Math.sqrt(result.getEntry(e)));
-                return result;
         }
 
         public static RealMatrix pow(final RealMatrix matrix, final double power) {

@@ -31,28 +31,39 @@ public class Test {
                 KernelCalculator kernelCalc = new KernelCalculator(training, kernel);
 
                 KNFST oneclass = new OneClassKNFST(kernelCalc);
-                KNFST multyclass = new MultiClassKNFST(kernelCalc, labelsTraining);
+                KNFST multiclass = new MultiClassKNFST(kernelCalc, labelsTraining);
 
-                System.out.println("done");
+                double[][] test = { {123, 245, 12}, {3455, 33, 90}};
+                double[] scoreOneclass = oneclass.scoreTestData(test);
+                double[] scoreMulticlass = multiclass.scoreTestData(test);
 
-                RealMatrix proj = KNFST.projection(kernelMatrix, labels);
-
-                printMatrix(proj);
-
-                for (int i = 0; i < 9; i++) {
-                        RealMatrix x = kernelMatrix.getRowMatrix(i);
-                        RealMatrix t = x.multiply(proj);
-
-                        System.out.println("t" + i + ":");
-                        printMatrix(t);
+                for (int i = 0; i < scoreOneclass.length; i++) {
+                        System.out.println("Test sample " + i + ":");
+                        System.out.println("oneClass: " + scoreOneclass[i]);
+                        System.out.println("multiClass: " + scoreMulticlass[i]);
                 }
 
-                double[][] testElements = { {13}, {21}, {18}, {26}, {39}, {46}, {43}, {59}, {56}};
-                RealMatrix test = MatrixFunctions.pow(MatrixUtils.createRealMatrix(testElements), 20);
+                System.out.println("done");
+                /*
+                                RealMatrix proj = KNFST.projection(kernelMatrix, labels);
 
-                RealMatrix projectionVector = test.transpose().multiply(proj);
-                System.out.println("Projection of test sample:");
-                printMatrix(projectionVector);
+                                printMatrix(proj);
+
+                                for (int i = 0; i < 9; i++) {
+                                        RealMatrix x = kernelMatrix.getRowMatrix(i);
+                                        RealMatrix t = x.multiply(proj);
+
+                                        System.out.println("t" + i + ":");
+                                        printMatrix(t);
+                                }
+
+                                double[][] testElements = { {13}, {21}, {18}, {26}, {39}, {46}, {43}, {59}, {56}};
+                                RealMatrix test = MatrixFunctions.pow(MatrixUtils.createRealMatrix(testElements), 20);
+
+                                RealMatrix projectionVector = test.transpose().multiply(proj);
+                                System.out.println("Projection of test sample:");
+                                printMatrix(projectionVector);
+                */
         }
 
         public static void printMatrix(RealMatrix matrix) {

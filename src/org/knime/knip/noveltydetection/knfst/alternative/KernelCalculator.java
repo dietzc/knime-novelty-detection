@@ -39,7 +39,7 @@ public class KernelCalculator implements Externalizable {
          * Output:  mxm matrix containing similarities of the training data
          */
         public RealMatrix kernelize() {
-                return calculateKernelMatrix(m_trainingData);
+                return calculateKernelMatrix(m_trainingData, m_trainingData);
         }
 
         /* Returns kernel matrix containing similarities of test data with training data
@@ -47,6 +47,10 @@ public class KernelCalculator implements Externalizable {
          * Output:  nxm matrix containing the similarities of n test samples with m training samples
          */
         public RealMatrix kernelize(BufferedDataTable testData) {
+                return calculateKernelMatrix(m_trainingData, testData);
+        }
+
+        public RealMatrix kernelize(double[][] testData) {
                 return calculateKernelMatrix(m_trainingData, testData);
         }
 
@@ -61,7 +65,6 @@ public class KernelCalculator implements Externalizable {
          */
         private RealMatrix calculateKernelMatrix(BufferedDataTable training, BufferedDataTable test) {
                 final RealMatrix kernelMatrix = MatrixUtils.createRealMatrix(training.getRowCount(), test.getRowCount());
-                int index = 0;
                 Iterator<DataRow> trainingIterator = training.iterator();
 
                 for (int r = 0; r < training.getRowCount(); r++) {
@@ -74,24 +77,20 @@ public class KernelCalculator implements Externalizable {
                 return kernelMatrix;
         }
 
-        private RealMatrix calculateKernelMatrix(double[][] training) {
-                final RealMatrix kernelMatrix = MatrixUtils.createRealMatrix(m_rowCount, m_colCount);
-                int index = 0;
-
-                for (int r1 = 0; r1 < m_rowCount; r1++) {
-                        for (int r2 = 0; r2 < m_rowCount; r2++) {
-                                kernelMatrix.setEntry(r1, r2, m_kernelFunction.calculate(training[r1], training[r2]));
+        private RealMatrix calculateKernelMatrix(double[][] training, double[][] test) {
+                final double[][] kernelMatrixData = new double[training.length][test.length];
+                for (int r1 = 0; r1 < training.length; r1++) {
+                        for (int r2 = 0; r2 < test.length; r2++) {
+                                kernelMatrixData[r1][r2] = m_kernelFunction.calculate(training[r1], training[r2]);
                         }
                 }
-
-                return kernelMatrix;
+                return MatrixUtils.createRealMatrix(kernelMatrixData);
         }
 
         private RealMatrix calculateKernelMatrix(double[][] training, BufferedDataTable test) {
-                final RealMatrix kernelMatrix = MatrixUtils.createRealMatrix(m_rowCount, test.getRowCount());
-                int index = 0;
+                final RealMatrix kernelMatrix = MatrixUtils.createRealMatrix(training.length, test.getRowCount());
 
-                for (int r = 0; r < m_rowCount; r++) {
+                for (int r = 0; r < training.length; r++) {
                         Iterator<DataRow> testIterator = test.iterator();
                         for (int c = 0; c < test.getRowCount(); c++) {
                                 kernelMatrix.setEntry(r, c, m_kernelFunction.calculate(training[r], testIterator.next()));

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.jblas.ranges.IntervalRange;
+import org.apache.commons.math3.linear.RealVector;
 import org.knime.core.node.BufferedDataTable;
 
 public class MultiClassKNFST extends KNFST {
@@ -32,7 +32,6 @@ public class MultiClassKNFST extends KNFST {
                 int nOld = 0;
                 for (int c = 0; c < classes.size(); c++) {
                         n += classes.get(c).getCount();
-                        final IntervalRange interval = new IntervalRange(nOld, n - 1);
                         m_targetPoints.setRowVector(c, MatrixFunctions.columnMeans(kernelMatrix.getSubMatrix(nOld, n - 1, 0,
                                         kernelMatrix.getColumnDimension() - 1).multiply(m_projection)));
                         nOld = n;
@@ -44,16 +43,28 @@ public class MultiClassKNFST extends KNFST {
                 // calculate nxm kernel matrix containing similarities between n training samples and m test samples
                 RealMatrix kernelMatrix = m_kernel.kernelize(test);
 
+                return score(kernelMatrix);
+        }
+
+        @Override
+        public double[] scoreTestData(double[][] test) {
+                // calculate nxm kernel matrix containing similarities between n training samples and m test samples
+                RealMatrix kernelMatrix = m_kernel.kernelize(test);
+
+                return score(kernelMatrix);
+        }
+
+        private double[] score(final RealMatrix kernelMatrix) {
                 // projected test samples:
-                RealMatrix projectionVectors = kernelMatrix.transpose().multiply(m_projection);
+                final RealMatrix projectionVectors = kernelMatrix.transpose().multiply(m_projection);
 
                 //squared euclidean distances to target points:
-                RealMatrix squared_distances = squared_euclidean_distances(projectionVectors, m_targetPoints);
+                final RealMatrix squared_distances = squared_euclidean_distances(projectionVectors, m_targetPoints);
 
                 // novelty scores as minimum distance to one of the target points
-                RealMatrix scoreVector = MatrixFunctions.sqrt(MatrixFunctions.rowMins(squared_distances));
+                final RealVector scoreVector = MatrixFunctions.sqrt(MatrixFunctions.rowMins(squared_distances));
 
-                return scoreVector.getData()[0];
+                return scoreVector.toArray();
         }
 
         private RealMatrix squared_euclidean_distances(RealMatrix x, RealMatrix y) {

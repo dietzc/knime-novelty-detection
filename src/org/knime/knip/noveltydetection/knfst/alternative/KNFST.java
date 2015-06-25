@@ -10,7 +10,6 @@ import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.knime.core.node.BufferedDataTable;
 
 public abstract class KNFST implements Externalizable {
@@ -24,20 +23,21 @@ public abstract class KNFST implements Externalizable {
 
         public abstract double[] scoreTestData(BufferedDataTable test);
 
+        public abstract double[] scoreTestData(double[][] test);
+
         public static RealMatrix projection(final RealMatrix kernelMatrix, final String[] labels) {
 
                 ArrayList<ClassWrapper> classes = ClassWrapper.classes(labels);
 
                 // check labels
                 if (classes.size() == 1) {
-                        System.out.println("not able to calculate a nullspace from data of a single class using KNFST (input variable \"labels\" only contains a single value)");
-                        return null;
+                        throw new IllegalArgumentException(
+                                        "not able to calculate a nullspace from data of a single class using KNFST (input variable \"labels\" only contains a single value)");
                 }
 
                 // check kernel matrix
                 if (!kernelMatrix.isSquare()) {
-                        System.out.println("kernel matrix must be quadratic");
-                        return null;
+                        throw new IllegalArgumentException("The KernelMatrix must be quadratic!");
                 }
 
                 // calculate weights of orthonormal basis in kernel space
@@ -229,50 +229,4 @@ public abstract class KNFST implements Externalizable {
                         for (double cell : row)
                                 arg0.writeDouble(cell);
         }
-
-        public static void main(String[] args) {
-                double[][] data = { {1, 2, 3, 4}, {1, 2, 3, 4}, {1, 2, 3, 4}, {1, 2, 3, 4}};
-                RealMatrix A = MatrixUtils.createRealMatrix(data);
-                EigenDecomposition eig = new EigenDecomposition(A);
-                RealMatrix V = eig.getV();
-                RealMatrix D = eig.getD();
-                SingularValueDecomposition svd = new SingularValueDecomposition(A);
-                RealMatrix svdV = svd.getV();
-                RealMatrix svdS = svd.getS();
-                int rank = svd.getRank();
-                RealMatrix ones = MatrixFunctions.ones(3, 4);
-                System.out.println("done");
-                /*String[] labels = {"A", "A", "A", "B", "B", "C"};
-                ArrayList<ClassWrapper> classes = ClassWrapper.classes(labels);
-                double[] elements = {1, 1, 1, 2, 2, 2, 3, 3, 3};
-                RealMatrix A = new DoubleMatrix(3, 3, elements);
-                RealMatrix L = DoubleMatrix.zeros(6, 6);
-                RealMatrix Z = nullspace(A);
-                for (int i = 0; i < 9; i++)
-                        System.out.println(A.get(i));
-
-                Test.printMatrix(A);
-                */
-                /*
-                DoubleMatrix[] eig = Eigen.symmetricEigenvectors(A);
-                test.printMatrix(eig[0]);
-                test.printMatrix(eig[1]);
-                */
-                //System.out.println(A.get(0, 2));
-                //L.columnMeans().print();
-                //centerKernelMatrix(A).print();
-                /*int rank = 0;
-                double[] sv = A.diag().toArray();
-                while (sv[rank] != 0.0)
-                	rank++;
-                int[] cindices = new int[A.columns-rank];
-                for (int i = 0; i < A.columns - rank; i++)
-                	cindices[i] = rank + i;
-                DoubleMatrix basis = A.getColumns(cindices);
-                basis.print();
-                A.print();
-                A.getColumn(2).print(); */
-
-        }
-
 }
