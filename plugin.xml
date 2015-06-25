@@ -8,5 +8,10 @@
             factory-class="org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTLearnerNodeFactory"
             id="org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTLearnerNodeFactory">
       </node>
+      <node
+            expert-flag="false"
+            factory-class="org.knime.knip.noveltydetection.nodes.knfstnoveltyscorer.KNFSTNoveltyScorerNodeFactory"
+            id="org.knime.knip.noveltydetection.nodes.KNFSTNoveltyScorerNodeFactory">
+      </node>
    </extension>
 </plugin>
