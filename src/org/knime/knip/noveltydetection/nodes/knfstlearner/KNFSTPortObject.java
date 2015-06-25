@@ -16,7 +16,7 @@ import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortObjectZipInputStream;
 import org.knime.core.node.port.PortObjectZipOutputStream;
 import org.knime.core.node.port.PortType;
-import org.knime.knip.noveltydetection.knfst.KNFST;
+import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
 
 public class KNFSTPortObject implements PortObject {
 
@@ -115,7 +115,7 @@ public class KNFSTPortObject implements PortObject {
         @Override
         public PortObjectSpec getSpec() {
                 // TODO Auto-generated method stub
-                return null;
+                return new KNFSTPortObjectSpec();
         }
 
         @Override

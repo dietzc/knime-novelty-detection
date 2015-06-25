@@ -72,13 +72,13 @@ import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
-import org.knime.knip.noveltydetection.knfst.EXPHIKKernel;
-import org.knime.knip.noveltydetection.knfst.HIKKernel;
-import org.knime.knip.noveltydetection.knfst.KNFST;
-import org.knime.knip.noveltydetection.knfst.KernelCalculator;
-import org.knime.knip.noveltydetection.knfst.KernelFunction;
-import org.knime.knip.noveltydetection.knfst.MultiClassKNFST;
-import org.knime.knip.noveltydetection.knfst.OneClassKNFST;
+import org.knime.knip.noveltydetection.knfst.alternative.EXPHIKKernel;
+import org.knime.knip.noveltydetection.knfst.alternative.HIKKernel;
+import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
+import org.knime.knip.noveltydetection.knfst.alternative.KernelCalculator;
+import org.knime.knip.noveltydetection.knfst.alternative.KernelFunction;
+import org.knime.knip.noveltydetection.knfst.alternative.MultiClassKNFST;
+import org.knime.knip.noveltydetection.knfst.alternative.OneClassKNFST;
 
 /**
  * Crop BitMasks or parts of images according to a Labeling
