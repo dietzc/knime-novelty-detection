@@ -6,7 +6,8 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Iterator;
 
-import org.jblas.DoubleMatrix;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DoubleValue;
 import org.knime.core.node.BufferedDataTable;
@@ -37,7 +38,7 @@ public class KernelCalculator implements Externalizable {
         /* Returns kernel matrix containing similarities of the training data
          * Output:  mxm matrix containing similarities of the training data
          */
-        public DoubleMatrix kernelize() {
+        public RealMatrix kernelize() {
                 return calculateKernelMatrix(m_trainingData);
         }
 
@@ -45,7 +46,7 @@ public class KernelCalculator implements Externalizable {
          * Parameters:  testData:   BufferedDataTable containing the test data
          * Output:  nxm matrix containing the similarities of n test samples with m training samples
          */
-        public DoubleMatrix kernelize(BufferedDataTable testData) {
+        public RealMatrix kernelize(BufferedDataTable testData) {
                 return calculateKernelMatrix(m_trainingData, testData);
         }
 
@@ -58,39 +59,42 @@ public class KernelCalculator implements Externalizable {
          *              test:       KNIME BufferedDataTable containing the test data
          * Output: The kernel matrix for the test and training data
          */
-        private DoubleMatrix calculateKernelMatrix(BufferedDataTable training, BufferedDataTable test) {
-                final DoubleMatrix kernelMatrix = DoubleMatrix.zeros(training.getRowCount(), test.getRowCount());
+        private RealMatrix calculateKernelMatrix(BufferedDataTable training, BufferedDataTable test) {
+                final RealMatrix kernelMatrix = MatrixUtils.createRealMatrix(training.getRowCount(), test.getRowCount());
                 int index = 0;
+                Iterator<DataRow> trainingIterator = training.iterator();
 
-                for (DataRow sample1 : test) {
-                        for (DataRow sample2 : training) {
-                                kernelMatrix.put(index++, m_kernelFunction.calculate(sample1, sample2));
+                for (int r = 0; r < training.getRowCount(); r++) {
+                        Iterator<DataRow> testIterator = test.iterator();
+                        for (int c = 0; c < test.getRowCount(); c++) {
+                                kernelMatrix.setEntry(r, c, m_kernelFunction.calculate(trainingIterator.next(), testIterator.next()));
                         }
                 }
 
                 return kernelMatrix;
         }
 
-        private DoubleMatrix calculateKernelMatrix(double[][] training) {
-                final DoubleMatrix kernelMatrix = DoubleMatrix.zeros(m_rowCount, m_colCount);
+        private RealMatrix calculateKernelMatrix(double[][] training) {
+                final RealMatrix kernelMatrix = MatrixUtils.createRealMatrix(m_rowCount, m_colCount);
                 int index = 0;
 
                 for (int r1 = 0; r1 < m_rowCount; r1++) {
                         for (int r2 = 0; r2 < m_rowCount; r2++) {
-                                kernelMatrix.put(index++, m_kernelFunction.calculate(training[r1], training[r2]));
+                                kernelMatrix.setEntry(r1, r2, m_kernelFunction.calculate(training[r1], training[r2]));
                         }
                 }
 
                 return kernelMatrix;
         }
 
-        private DoubleMatrix calculateKernelMatrix(double[][] training, BufferedDataTable test) {
-                final DoubleMatrix kernelMatrix = DoubleMatrix.zeros(m_rowCount, test.getRowCount());
+        private RealMatrix calculateKernelMatrix(double[][] training, BufferedDataTable test) {
+                final RealMatrix kernelMatrix = MatrixUtils.createRealMatrix(m_rowCount, test.getRowCount());
                 int index = 0;
 
                 for (int r = 0; r < m_rowCount; r++) {
-                        for (DataRow sample2 : test) {
-                                kernelMatrix.put(index++, m_kernelFunction.calculate(training[r], sample2));
+                        Iterator<DataRow> testIterator = test.iterator();
+                        for (int c = 0; c < test.getRowCount(); c++) {
+                                kernelMatrix.setEntry(r, c, m_kernelFunction.calculate(training[r], testIterator.next()));
                         }
                 }
 
