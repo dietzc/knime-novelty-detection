@@ -28,6 +28,10 @@ public class KNFSTPortObjectSpec implements PortObjectSpec {
                 return null;
         }
 
+        public List<String> getCompatibleFeatures() {
+                return m_compatibleFeatures;
+        }
+
         public static PortObjectSpecSerializer<KNFSTPortObjectSpec> getPortObjectSpecSerializer() {
                 return new PortObjectSpecSerializer<KNFSTPortObjectSpec>() {
 

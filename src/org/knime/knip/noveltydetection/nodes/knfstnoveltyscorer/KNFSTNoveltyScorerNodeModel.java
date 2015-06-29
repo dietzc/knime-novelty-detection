@@ -49,6 +49,7 @@
 package org.knime.knip.noveltydetection.nodes.knfstnoveltyscorer;
 
 import java.io.File;
+import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
 
@@ -73,6 +74,7 @@ import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
 import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
 import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObject;
+import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObjectSpec;
 
 /**
  * Crop BitMasks or parts of images according to a Labeling
@@ -86,8 +88,6 @@ import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObject;
  */
 @SuppressWarnings("deprecation")
 public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel implements BufferedDataTableHolder {
-
-        static final String[] BACKGROUND_OPTIONS = new String[] {"Min Value of Result", "Max Value of Result", "Zero", "Source"};
 
         /**
          * Helper
@@ -117,6 +117,15 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 // TODO check inspec for img value column
 
                 m_inTableSpec = (DataTableSpec) inSpecs[1];
+                KNFSTPortObjectSpec knfstSpec = (KNFSTPortObjectSpec) inSpecs[0];
+                List<String> compatibleFeatures = knfstSpec.getCompatibleFeatures();
+
+                for (String feature : compatibleFeatures) {
+                        if (!m_inTableSpec.containsName(feature))
+                                throw new InvalidSettingsException(
+                                                "The input table does not contain the necessary columns needed by the KNFST model.");
+                }
+
                 return createOutSpec(m_inTableSpec);
         }
 
