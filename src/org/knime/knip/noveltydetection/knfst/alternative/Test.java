@@ -24,10 +24,10 @@ public class Test {
                 RealMatrix kOriginal = MatrixUtils.createRealMatrix(elements);
                 RealMatrix kernelMatrix = MatrixFunctions.pow(kOriginal, 20);
 
-                double[][] training = { {1, 2, 3}, {2, 3, 4}, {12, 235, 13}};
-                String[] labelsTraining = {"1", "1", "2"};
+                double[][] training = { {1, 2, 3}, {2, 3, 4}, {12, 235, 13}, {12, 234, 13}, {222, 1, 213}};
+                String[] labelsTraining = {"1", "1", "2", "2", "3"};
 
-                KernelFunction kernel = new HIKKernel();
+                KernelFunction kernel = new EXPHIKKernel();
                 KernelCalculator kernelCalc = new KernelCalculator(training, kernel);
 
                 KNFST oneclass = new OneClassKNFST(kernelCalc);
