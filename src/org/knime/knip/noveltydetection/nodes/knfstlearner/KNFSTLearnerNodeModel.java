@@ -49,6 +49,7 @@
 package org.knime.knip.noveltydetection.nodes.knfstlearner;
 
 import java.io.File;
+import java.util.LinkedList;
 import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
@@ -117,6 +118,8 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
         private SettingsModelFilterString m_columnSelection = createColumnSelectionModel();
         private SettingsModelString m_classColumn = createClassColumnSelectionModel();
 
+        private List<String> m_compatibleFeatures;
+
         /* Resulting PortObject */
         private KNFSTPortObject m_knfstPortObject;
 
@@ -157,8 +160,17 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
                         }
                 }
                 */
+                List<String> featureNameList = m_columnSelection.getIncludeList();
+                List<String> compatibleFeatures = new LinkedList<String>();
+                for (String feature : featureNameList) {
+                        DataColumnSpec featureSpec = dataSpec.getColumnSpec(feature);
+                        if (featureSpec.getType().isCompatible(DoubleValue.class)) {
+                                compatibleFeatures.add(feature);
+                        }
+                }
+                m_compatibleFeatures = compatibleFeatures;
 
-                return new PortObjectSpec[] {new KNFSTPortObjectSpec()};
+                return new PortObjectSpec[] {new KNFSTPortObjectSpec(compatibleFeatures)};
         }
 
         /**
@@ -229,7 +241,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
                         knfst = new MultiClassKNFST(kernelCalculator, labels);
                 }
 
-                m_knfstPortObject = new KNFSTPortObject(knfst);
+                m_knfstPortObject = new KNFSTPortObject(knfst, m_compatibleFeatures);
 
                 return new PortObject[] {m_knfstPortObject};
         }

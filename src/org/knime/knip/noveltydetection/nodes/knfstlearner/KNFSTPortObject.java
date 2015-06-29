@@ -3,6 +3,7 @@ package org.knime.knip.noveltydetection.nodes.knfstlearner;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.List;
 import java.util.zip.ZipEntry;
 
 import javax.swing.JComponent;
@@ -28,9 +29,11 @@ public class KNFSTPortObject implements PortObject {
         private static final String SUMMARY = "Kernel Null Foley Sammon Transformation Object for novelty scoring";
 
         private KNFST m_knfstModel;
+        private List<String> m_compatibleFeatures;
 
-        public KNFSTPortObject(KNFST knfst) {
+        public KNFSTPortObject(KNFST knfst, List<String> compatibleFeatures) {
                 m_knfstModel = knfst;
+                m_compatibleFeatures = compatibleFeatures;
         }
 
         public KNFST getKNFST() {
@@ -62,7 +65,12 @@ public class KNFSTPortObject implements PortObject {
                 try {
                         out.putNextEntry(new ZipEntry("knfst.objectout"));
                         oo = new ObjectOutputStream(new NonClosableOutputStream.Zip(out));
+                        oo.writeUTF(m_knfstModel.getClass().getName());
                         m_knfstModel.writeExternal(oo);
+                        oo.writeUTF(m_compatibleFeatures.getClass().getName());
+                        oo.writeInt(m_compatibleFeatures.size());
+                        for (String feature : m_compatibleFeatures)
+                                oo.writeUTF(feature);
                 } catch (IOException ioe) {
 
                 } finally {
@@ -79,6 +87,7 @@ public class KNFSTPortObject implements PortObject {
         private static KNFSTPortObject load(final PortObjectZipInputStream in) {
                 ObjectInputStream oi = null;
                 KNFST knfst = null;
+                List<String> compatibleFeatures = null;
 
                 try {
                         // load classifier
@@ -87,6 +96,9 @@ public class KNFSTPortObject implements PortObject {
                         oi = new ObjectInputStream(new NonClosableInputStream.Zip(in));
                         knfst = (KNFST) Class.forName(oi.readUTF()).newInstance();
                         knfst.readExternal(oi);
+                        compatibleFeatures = (List<String>) Class.forName(oi.readUTF()).newInstance();
+                        for (int i = 0; i < oi.readInt(); i++)
+                                compatibleFeatures.add(oi.readUTF());
                 } catch (IOException ioe) {
 
                 } catch (ClassNotFoundException cnf) {
@@ -107,7 +119,7 @@ public class KNFSTPortObject implements PortObject {
                         }
                 }
 
-                return new KNFSTPortObject(knfst);
+                return new KNFSTPortObject(knfst, compatibleFeatures);
 
         }
 
@@ -119,7 +131,7 @@ public class KNFSTPortObject implements PortObject {
         @Override
         public PortObjectSpec getSpec() {
                 // TODO Auto-generated method stub
-                return new KNFSTPortObjectSpec();
+                return new KNFSTPortObjectSpec(m_compatibleFeatures);
         }
 
         @Override
