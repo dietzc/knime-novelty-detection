@@ -7,6 +7,10 @@ import org.knime.core.node.BufferedDataTable;
 
 public class OneClassKNFST extends KNFST {
 
+        public OneClassKNFST() {
+
+        }
+
         public OneClassKNFST(final KernelCalculator kernel) {
                 super(kernel);
                 // get number of training samples

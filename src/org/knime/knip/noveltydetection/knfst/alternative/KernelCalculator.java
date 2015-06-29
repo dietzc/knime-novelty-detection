@@ -21,6 +21,10 @@ public class KernelCalculator implements Externalizable {
 
         private KernelFunction m_kernelFunction;
 
+        public KernelCalculator() {
+
+        }
+
         public KernelCalculator(BufferedDataTable trainingData, KernelFunction kernelFunction) {
                 m_trainingData = readBufferedDataTable(trainingData);
                 m_rowCount = trainingData.getRowCount();

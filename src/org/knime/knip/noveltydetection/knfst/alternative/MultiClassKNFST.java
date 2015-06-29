@@ -14,6 +14,10 @@ public class MultiClassKNFST extends KNFST {
 
         private String[] m_labels;
 
+        public MultiClassKNFST() {
+
+        }
+
         public MultiClassKNFST(KernelCalculator kernel, String[] labels) {
                 super(kernel);
                 m_labels = labels;
@@ -67,13 +71,13 @@ public class MultiClassKNFST extends KNFST {
                 return scoreVector.toArray();
         }
 
-        private RealMatrix squared_euclidean_distances(RealMatrix x, RealMatrix y) {
-                RealMatrix distmat = MatrixUtils.createRealMatrix(x.getRowDimension(), y.getRowDimension());
+        private RealMatrix squared_euclidean_distances(final RealMatrix x, final RealMatrix y) {
+                final RealMatrix distmat = MatrixUtils.createRealMatrix(x.getRowDimension(), y.getRowDimension());
 
                 for (int i = 0; i < x.getRowDimension(); i++) {
                         for (int j = 0; j < y.getRowDimension(); j++) {
-                                RealMatrix buff = x.getRowMatrix(i).subtract(y.getRowMatrix(j));
-                                distmat.setSubMatrix(buff.multiply(buff.transpose()).getData(), i, j);
+                                final RealVector buff = x.getRowVector(i).subtract(y.getRowVector(j));
+                                distmat.setEntry(i, j, buff.dotProduct(buff));
                         }
                 }
 

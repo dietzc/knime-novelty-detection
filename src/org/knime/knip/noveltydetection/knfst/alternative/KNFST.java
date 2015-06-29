@@ -17,6 +17,10 @@ public abstract class KNFST implements Externalizable {
         protected RealMatrix m_projection;
         protected RealMatrix m_targetPoints;
 
+        public KNFST() {
+
+        }
+
         public KNFST(KernelCalculator kernel) {
                 m_kernel = kernel;
         }
@@ -181,7 +185,7 @@ public abstract class KNFST implements Externalizable {
                                 for (int c = 0; c < colsProj; c++)
                                         projData[r][c] = arg0.readDouble();
                         // Matrix construction
-                        m_targetPoints = MatrixUtils.createRealMatrix(projData);
+                        m_projection = MatrixUtils.createRealMatrix(projData);
 
                         // read targetPoints
                         // rows
