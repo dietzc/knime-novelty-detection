@@ -157,4 +157,18 @@ public class MatrixFunctions {
 
                 return MatrixUtils.createRealMatrix(result);
         }
+
+        public static double[] calculateRowVectorDistances(final RealMatrix matrix) {
+                final double[] distances = new double[matrix.getRowDimension() * (matrix.getRowDimension() - 1) / 2];
+                int count = 1;
+                int iterator = 0;
+                for (int r1 = 0; r1 < matrix.getRowDimension(); r1++) {
+                        for (int r2 = count; r2 < matrix.getRowDimension(); r2++) {
+                                distances[iterator++] = matrix.getRowVector(r1).getDistance(matrix.getRowVector(r2));
+                        }
+                        count++;
+                }
+
+                return distances;
+        }
 }

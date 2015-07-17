@@ -40,6 +40,10 @@ public class MultiClassKNFST extends KNFST {
                                         kernelMatrix.getColumnDimension() - 1).multiply(m_projection)));
                         nOld = n;
                 }
+
+                // set betweenClassDistances
+                m_betweenClassDistances = MatrixFunctions.calculateRowVectorDistances(m_targetPoints);
+
         }
 
         @Override
