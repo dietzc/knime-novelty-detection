@@ -16,6 +16,7 @@ public abstract class KNFST implements Externalizable {
         protected KernelCalculator m_kernel;
         protected RealMatrix m_projection;
         protected RealMatrix m_targetPoints;
+        protected double[] m_betweenClassDistances;
 
         public KNFST() {
 
@@ -200,6 +201,12 @@ public abstract class KNFST implements Externalizable {
                         // Matrix construction
                         m_targetPoints = MatrixUtils.createRealMatrix(tarData);
 
+                        // read betweenClassDistances
+                        final double[] betweenClassDistances = new double[arg0.readInt()];
+                        for (int i = 0; i < betweenClassDistances.length; i++) {
+                                betweenClassDistances[i] = arg0.readDouble();
+                        }
+
                 } catch (InstantiationException | IllegalAccessException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -232,5 +239,13 @@ public abstract class KNFST implements Externalizable {
                 for (double[] row : tarData)
                         for (double cell : row)
                                 arg0.writeDouble(cell);
+
+                // write betweenClassDistances
+                // length
+                arg0.writeInt(m_betweenClassDistances.length);
+                // data
+                for (double dist : m_betweenClassDistances) {
+                        arg0.writeDouble(dist);
+                }
         }
 }
