@@ -35,6 +35,7 @@ public class OneClassKNFST extends KNFST {
                 this.m_targetPoints = MatrixUtils.createRowRealMatrix(MatrixFunctions.columnMeans(
                                 k.getSubMatrix(0, n, 0, k.getColumnDimension() - 1).multiply(projection)).toArray());
                 this.m_projection = projection.getSubMatrix(0, n - 1, 0, projection.getColumnDimension() - 1);
+                this.m_betweenClassDistances = new double[] {m_targetPoints.getData()[0][0]};
         }
 
         @Override
