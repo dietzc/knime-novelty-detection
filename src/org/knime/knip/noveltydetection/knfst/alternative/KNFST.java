@@ -90,17 +90,11 @@ public abstract class KNFST implements Externalizable {
                 // calculate transformation T of within class scatter Sw:
                 // T= B'*K*(I-L) and L a block matrix
                 RealMatrix L = kernelMatrix.createMatrix(kernelMatrix.getRowDimension(), kernelMatrix.getColumnDimension());
-                int l = 0;
-                int count = 0;
                 int start = 0;
-                for (int k = 0; k < classes.size(); k++) {
-                        for (; l < labels.length && labels[l].equals(classes.get(k).getName()); l++) {
-                                count++;
-                        }
-                        L.setSubMatrix(MatrixFunctions.ones(count, count).scalarMultiply(1.0 / (double) classes.get(k).getCount()).getData(), start,
-                                        start);
-                        start = count;
-                        count = 0;
+                for (ClassWrapper cl : classes) {
+                        int count = cl.getCount();
+                        L.setSubMatrix(MatrixFunctions.ones(count, count).scalarMultiply(1.0 / (double) count).getData(), start, start);
+                        start += count;
                 }
 
                 // need Matrix M with all entries 1/m to modify basisvecs which allows usage of 
