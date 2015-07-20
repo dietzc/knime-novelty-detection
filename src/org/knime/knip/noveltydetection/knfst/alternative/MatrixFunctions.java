@@ -39,7 +39,12 @@ public class MatrixFunctions {
                 final SingularValueDecomposition svd = new SingularValueDecomposition(matrix);
                 final int rank = svd.getRank();
                 final RealMatrix V = svd.getV();
-                return V.getSubMatrix(0, V.getRowDimension() - 1, rank - 1, V.getColumnDimension() - 1);
+                RealMatrix nullspace = null;
+                if (rank < matrix.getColumnDimension()) {
+                        nullspace = V.getSubMatrix(0, V.getRowDimension() - 1, rank, V.getColumnDimension() - 1);
+                }
+
+                return nullspace;
         }
 
         public static double[] abs(final double[] array) {

@@ -32,10 +32,11 @@ public class OneClassKNFST extends KNFST {
                 final int[] indices = new int[n];
                 for (int i = 0; i < n; i++)
                         indices[i] = i;
+                RealMatrix projectionTraining = k.getSubMatrix(0, n - 1, 0, k.getColumnDimension() - 1).multiply(projection);
                 this.m_targetPoints = MatrixUtils.createRowRealMatrix(MatrixFunctions.columnMeans(
-                                k.getSubMatrix(0, n, 0, k.getColumnDimension() - 1).multiply(projection)).toArray());
+                                k.getSubMatrix(0, n - 1, 0, k.getColumnDimension() - 1).multiply(projection)).toArray());
                 this.m_projection = projection.getSubMatrix(0, n - 1, 0, projection.getColumnDimension() - 1);
-                this.m_betweenClassDistances = new double[] {m_targetPoints.getData()[0][0]};
+                this.m_betweenClassDistances = new double[] {Math.abs(m_targetPoints.getEntry(0, 0))};
         }
 
         @Override
@@ -58,8 +59,8 @@ public class OneClassKNFST extends KNFST {
                 final RealMatrix projectionVectors = kernelMatrix.transpose().multiply(m_projection);
 
                 // differences to the target value:
-                final RealMatrix diff = projectionVectors.subtract(MatrixFunctions.ones(kernelMatrix.getColumnDimension(), 1)
-                                .multiply(m_targetPoints));
+                final RealMatrix diff = projectionVectors.subtract(MatrixFunctions.ones(kernelMatrix.getColumnDimension(), 1).scalarMultiply(
+                                m_targetPoints.getEntry(0, 0)));
 
                 // distances to the target value:
                 final RealVector scoresVector = MatrixFunctions.sqrt(MatrixFunctions.rowSums(MatrixFunctions.multiplyElementWise(diff, diff)));

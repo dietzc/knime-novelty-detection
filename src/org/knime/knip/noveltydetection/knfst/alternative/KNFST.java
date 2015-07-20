@@ -119,13 +119,13 @@ public abstract class KNFST implements Externalizable {
                 //calculate weights for null space
                 RealMatrix eigenvecs = MatrixFunctions.nullspace(T);
 
-                if (eigenvecs.getColumnDimension() < 1) {
+                if (eigenvecs == null) {
                         EigenDecomposition eigenComp = new EigenDecomposition(T);
                         double[] eigenvals = eigenComp.getRealEigenvalues();
                         eigenvecs = eigenComp.getV();
                         int minId = MatrixFunctions.argmin(MatrixFunctions.abs(eigenvals));
-                        double[][] eigenvecsData = {eigenvecs.getColumn(minId)};
-                        eigenvecs = MatrixUtils.createRealMatrix(eigenvecsData);
+                        double[] eigenvecsData = eigenvecs.getColumn(minId);
+                        eigenvecs = MatrixUtils.createColumnRealMatrix(eigenvecsData);
                 }
 
                 //System.out.println("eigenvecs:");
@@ -146,7 +146,7 @@ public abstract class KNFST implements Externalizable {
                 return proj;
         }
 
-        private static RealMatrix centerKernelMatrix(RealMatrix kernelMatrix) {
+        private static RealMatrix centerKernelMatrix(final RealMatrix kernelMatrix) {
                 // get size of kernelMatrix
                 int n = kernelMatrix.getRowDimension();
 
@@ -154,7 +154,7 @@ public abstract class KNFST implements Externalizable {
                 RealVector columnMeans = MatrixFunctions.columnMeans(kernelMatrix);
                 double matrixMean = MatrixFunctions.mean(kernelMatrix);
 
-                RealMatrix centeredKernelMatrix = kernelMatrix;
+                RealMatrix centeredKernelMatrix = kernelMatrix.copy();
 
                 for (int k = 0; k < n; k++) {
                         centeredKernelMatrix.setRowVector(k, centeredKernelMatrix.getRowVector(k).subtract(columnMeans));
@@ -206,6 +206,7 @@ public abstract class KNFST implements Externalizable {
                         for (int i = 0; i < betweenClassDistances.length; i++) {
                                 betweenClassDistances[i] = arg0.readDouble();
                         }
+                        m_betweenClassDistances = betweenClassDistances;
 
                 } catch (InstantiationException | IllegalAccessException e) {
                         // TODO Auto-generated catch block
@@ -247,5 +248,9 @@ public abstract class KNFST implements Externalizable {
                 for (double dist : m_betweenClassDistances) {
                         arg0.writeDouble(dist);
                 }
+        }
+
+        public double[] getBetweenClassDistances() {
+                return m_betweenClassDistances;
         }
 }
