@@ -85,7 +85,7 @@ public class KernelCalculator implements Externalizable {
                 final double[][] kernelMatrixData = new double[training.length][test.length];
                 for (int r1 = 0; r1 < training.length; r1++) {
                         for (int r2 = 0; r2 < test.length; r2++) {
-                                kernelMatrixData[r1][r2] = m_kernelFunction.calculate(training[r1], training[r2]);
+                                kernelMatrixData[r1][r2] = m_kernelFunction.calculate(training[r1], test[r2]);
                         }
                 }
                 return MatrixUtils.createRealMatrix(kernelMatrixData);
