@@ -80,6 +80,7 @@ import org.knime.knip.noveltydetection.knfst.alternative.KernelCalculator;
 import org.knime.knip.noveltydetection.knfst.alternative.KernelFunction;
 import org.knime.knip.noveltydetection.knfst.alternative.MultiClassKNFST;
 import org.knime.knip.noveltydetection.knfst.alternative.OneClassKNFST;
+import org.knime.knip.noveltydetection.knfst.alternative.RBFKernel;
 
 /**
  * Crop BitMasks or parts of images according to a Labeling
@@ -226,6 +227,12 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
                 case "EXPHIK":
                         kernelFunction = new EXPHIKKernel();
                         break;
+                case "RBF":
+                        // Sigma is defaulted to 0.1 for testing
+                        kernelFunction = new RBFKernel(1);
+                        break;
+                default:
+                        kernelFunction = new HIKKernel();
                 }
 
                 final KernelCalculator kernelCalculator = new KernelCalculator(training, kernelFunction);

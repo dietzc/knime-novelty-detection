@@ -18,7 +18,7 @@ public class KNFSTLearnerNodeDialog<L extends Comparable<L>> extends DefaultNode
                 addDialogComponent(new DialogComponentColumnNameSelection(KNFSTLearnerNodeModel.createClassColumnSelectionModel(),
                                 "Select class column", 0, StringValue.class));
 
-                String[] available_Kernels = {"HIK", "EXPHIK"};
+                String[] available_Kernels = {"HIK", "EXPHIK", "RBF"};
                 addDialogComponent(new DialogComponentStringSelection(KNFSTLearnerNodeModel.createKernelFunctionSelectionModel(), "Kernel",
                                 available_Kernels));
         }
