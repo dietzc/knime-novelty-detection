@@ -58,6 +58,7 @@ import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.container.ColumnRearranger;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.node.BufferedDataContainer;
@@ -145,15 +146,42 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 final BufferedDataContainer container = exec.createDataContainer(createOutSpec(m_inTableSpec)[0]);
 
                 final KNFST knfst = ((KNFSTPortObject) inData[0]).getKNFST();
-                final BufferedDataTable testData = (BufferedDataTable) inData[1];
+                final BufferedDataTable data = (BufferedDataTable) inData[1];
+                final DataTableSpec tableSpec = data.getDataTableSpec();
+
+                final KNFSTPortObjectSpec knfstSpec = (KNFSTPortObjectSpec) ((KNFSTPortObject) inData[0]).getSpec();
+                List<String> includedFeatures = knfstSpec.getCompatibleFeatures();
+
+                final ColumnRearranger cr = new ColumnRearranger(tableSpec);
+
+                for (DataColumnSpec colSpec : tableSpec) {
+                        if (!includedFeatures.contains(colSpec.getName())) {
+                                cr.remove(colSpec.getName());
+                        }
+                }
+
+                //final BufferedDataTable testData = exec.createColumnRearrangeTable(data, cr, exec);
+
+                final BufferedDataTable testData = data;
+
+                System.out.println(testData.getDataTableSpec().getNumColumns());
 
                 double[] scores = knfst.scoreTestData(testData);
-                int iterator = 0;
 
-                for (DataRow row : testData) {
+                // add options for different normalizations
+                double normalizer = getMin(knfst.getBetweenClassDistances());
+
+                // normalize scores
+                for (int i = 0; i < scores.length; i++) {
+                        scores[i] = scores[i] / normalizer;
+                }
+
+                int scoreIterator = 0;
+
+                for (DataRow row : data) {
                         DataCell[] cells = new DataCell[row.getNumCells() + 1];
                         for (int c = 0; c < cells.length; c++) {
-                                cells[c] = (c < cells.length - 1) ? row.getCell(c) : new DoubleCell(scores[iterator++]);
+                                cells[c] = (c < cells.length - 1) ? row.getCell(c) : new DoubleCell(scores[scoreIterator++]);
                         }
                         container.addRowToTable(new DefaultRow(row.getKey(), cells));
                 }
@@ -225,5 +253,22 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
         @Override
         protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
 
+        }
+
+        /****************** Private helper methods *************************************************/
+
+        private static double getMin(double[] array) {
+                if (array.length == 0) {
+                        throw new IllegalArgumentException("Array must contain at least one element!");
+                }
+
+                double min = array[0];
+
+                for (double d : array) {
+                        if (d < min) {
+                                min = d;
+                        }
+                }
+                return min;
         }
 }
