@@ -53,6 +53,7 @@ import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
 
+import org.apache.commons.math3.linear.RealMatrix;
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
@@ -76,7 +77,12 @@ import org.knime.core.node.defaultnodesettings.SettingsModelFilterString;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
+import org.knime.knip.noveltydetection.knfst.alternative.EXPHIKKernel;
+import org.knime.knip.noveltydetection.knfst.alternative.HIKKernel;
 import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
+import org.knime.knip.noveltydetection.knfst.alternative.KernelCalculator;
+import org.knime.knip.noveltydetection.knfst.alternative.KernelFunction;
+import org.knime.knip.noveltydetection.knfst.alternative.RBFKernel;
 
 /**
  * Crop BitMasks or parts of images according to a Labeling
@@ -195,6 +201,29 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
                 BufferedDataTable training = exec.createColumnRearrangeTable(trainingData, trainingRearranger, exec);
                 BufferedDataTable test = exec.createColumnRearrangeTable(testData, testRearranger, exec);
+
+                // Get KernelFunction
+                KernelFunction kernelFunction = null;
+                switch (m_kernelFunctionModel.getStringValue()) {
+                case "HIK":
+                        kernelFunction = new HIKKernel();
+                        break;
+                case "EXPHIK":
+                        kernelFunction = new EXPHIKKernel();
+                        break;
+                case "RBF":
+                        // Sigma is defaulted to 1 for testing
+                        kernelFunction = new RBFKernel(1);
+                        break;
+                default:
+                        kernelFunction = new HIKKernel();
+                }
+
+                // Create KernelCalculator
+                KernelCalculator kernelCalculator = new KernelCalculator(kernelFunction);
+
+                // Get global KernelMatrix
+                RealMatrix globalKernelMatrix = kernelCalculator.kernelize(training, test);
 
                 KNFST knfst = null;
                 double[] scores = knfst.scoreTestData(testData);
