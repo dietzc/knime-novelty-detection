@@ -70,6 +70,8 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
+import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
@@ -90,21 +92,28 @@ import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObjectSpec;
 @SuppressWarnings("deprecation")
 public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel implements BufferedDataTableHolder {
 
+        private static final int DEFAULT_NUMBER_OF_NEIGHBORS = 5;
+
         /**
          * Helper
          *
          * @return SettingsModel to store img column
          */
 
+        static SettingsModelInteger createNumberOfNeighborsModel() {
+                return new SettingsModelIntegerBounded("NumberOfNeighbors", DEFAULT_NUMBER_OF_NEIGHBORS, 1, Integer.MAX_VALUE);
+        }
+
         DataTableSpec m_inTableSpec;
 
         /* SettingsModels */
+        private SettingsModelInteger m_numberOfNeighborsModel;
 
         /* Resulting BufferedDataTable */
         private BufferedDataTable m_data;
 
         /**
-         * Constructor SegementCropperNodeModel
+         * Constructor LocalNoveltyScorerNodeModel
          */
         public LocalNoveltyScorerNodeModel() {
                 super(new PortType[] {KNFSTPortObject.TYPE, BufferedDataTable.TYPE}, new PortType[] {BufferedDataTable.TYPE});
