@@ -49,7 +49,9 @@ public class MultiClassKNFST extends KNFST {
         @Override
         public double[] scoreTestData(BufferedDataTable test) {
                 // calculate nxm kernel matrix containing similarities between n training samples and m test samples
+                long time = System.currentTimeMillis();
                 RealMatrix kernelMatrix = m_kernel.kernelize(test);
+                System.out.println("Kernelizing: " + (System.currentTimeMillis() - time));
 
                 return score(kernelMatrix);
         }
