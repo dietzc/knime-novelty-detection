@@ -49,7 +49,6 @@
 package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 
 import java.io.File;
-import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
 
@@ -58,7 +57,6 @@ import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
-import org.knime.core.data.container.ColumnRearranger;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.node.BufferedDataContainer;
@@ -72,11 +70,6 @@ import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
-import org.knime.core.node.port.PortObject;
-import org.knime.core.node.port.PortObjectSpec;
-import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
-import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObject;
-import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObjectSpec;
 
 /**
  * Crop BitMasks or parts of images according to a Labeling
@@ -121,7 +114,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
          * {@inheritDoc}
          */
         @Override
-        protected DataTableSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
+        protected DataTableSpec[] configure(final DataTableSpec[] inSpecs) throws InvalidSettingsException {
                 // TODO check inspec for img value column
 
                 final DataTableSpec trainingTableSpec = (DataTableSpec) inSpecs[0];
@@ -141,30 +134,9 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
          */
         @Override
         @SuppressWarnings({"unchecked"})
-        protected BufferedDataTable[] execute(final PortObject[] inData, final ExecutionContext exec) throws Exception {
+        protected BufferedDataTable[] execute(final BufferedDataTable[] inData, final ExecutionContext exec) throws Exception {
 
                 final BufferedDataContainer container = exec.createDataContainer(createOutSpec(m_inTableSpec)[0]);
-
-                final KNFST knfst = ((KNFSTPortObject) inData[0]).getKNFST();
-                final BufferedDataTable data = (BufferedDataTable) inData[1];
-                final DataTableSpec tableSpec = data.getDataTableSpec();
-
-                final KNFSTPortObjectSpec knfstSpec = (KNFSTPortObjectSpec) ((KNFSTPortObject) inData[0]).getSpec();
-                List<String> includedFeatures = knfstSpec.getCompatibleFeatures();
-
-                final ColumnRearranger cr = new ColumnRearranger(tableSpec);
-
-                for (DataColumnSpec colSpec : tableSpec) {
-                        if (!includedFeatures.contains(colSpec.getName())) {
-                                cr.remove(colSpec.getName());
-                        }
-                }
-
-                //final BufferedDataTable testData = exec.createColumnRearrangeTable(data, cr, exec);
-
-                final BufferedDataTable testData = data;
-
-                System.out.println(testData.getDataTableSpec().getNumColumns());
 
                 double[] scores = knfst.scoreTestData(testData);
 
