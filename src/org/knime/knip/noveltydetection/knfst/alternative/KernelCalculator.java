@@ -39,11 +39,19 @@ public class KernelCalculator implements Externalizable {
                 m_kernelFunction = kernelFunction;
         }
 
+        public KernelCalculator(KernelFunction kernelFunction) {
+                m_kernelFunction = kernelFunction;
+        }
+
         /* Returns kernel matrix containing similarities of the training data
          * Output:  mxm matrix containing similarities of the training data
          */
         public RealMatrix kernelize() {
                 return calculateKernelMatrix(m_trainingData, m_trainingData);
+        }
+
+        public RealMatrix kernelize(BufferedDataTable trainingData, BufferedDataTable testData) {
+                return calculateKernelMatrix(trainingData, testData);
         }
 
         /* Returns kernel matrix containing similarities of test data with training data
