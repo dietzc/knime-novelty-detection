@@ -88,7 +88,6 @@ import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObjectSpec;
  * @param <L>
  * @param <T>
  */
-@SuppressWarnings("deprecation")
 public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel implements BufferedDataTableHolder {
 
         private static final int DEFAULT_NUMBER_OF_NEIGHBORS = 5;
@@ -106,7 +105,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
         DataTableSpec m_inTableSpec;
 
         /* SettingsModels */
-        private SettingsModelInteger m_numberOfNeighborsModel;
+        private SettingsModelInteger m_numberOfNeighborsModel = createNumberOfNeighborsModel();
 
         /* Resulting BufferedDataTable */
         private BufferedDataTable m_data;
@@ -125,17 +124,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
         protected DataTableSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
                 // TODO check inspec for img value column
 
-                m_inTableSpec = (DataTableSpec) inSpecs[1];
-                KNFSTPortObjectSpec knfstSpec = (KNFSTPortObjectSpec) inSpecs[0];
-                List<String> compatibleFeatures = knfstSpec.getCompatibleFeatures();
+                final DataTableSpec trainingTableSpec = (DataTableSpec) inSpecs[0];
+                final DataTableSpec testTableSpec = (DataTableSpec) inSpecs[1];
 
-                for (String feature : compatibleFeatures) {
-                        if (!m_inTableSpec.containsName(feature))
-                                throw new InvalidSettingsException(
-                                                "The input table does not contain the necessary columns needed by the KNFST model.");
-                }
-
-                return createOutSpec(m_inTableSpec);
+                return createOutSpec(testTableSpec);
         }
 
         private DataTableSpec[] createOutSpec(final DataTableSpec inTableSpec) {
