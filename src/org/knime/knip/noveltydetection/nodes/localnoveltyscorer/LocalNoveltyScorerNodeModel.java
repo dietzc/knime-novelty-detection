@@ -68,8 +68,11 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelFilterString;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
+import org.knime.core.node.defaultnodesettings.SettingsModelString;
+import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
 
 /**
  * Crop BitMasks or parts of images according to a Labeling
@@ -84,6 +87,7 @@ import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel implements BufferedDataTableHolder {
 
         private static final int DEFAULT_NUMBER_OF_NEIGHBORS = 5;
+        static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK", "RBF"};
 
         /**
          * Helper
@@ -95,10 +99,23 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 return new SettingsModelIntegerBounded("NumberOfNeighbors", DEFAULT_NUMBER_OF_NEIGHBORS, 1, Integer.MAX_VALUE);
         }
 
-        DataTableSpec m_inTableSpec;
+        static SettingsModelString createKernelFunctionSelectionModel() {
+                return new SettingsModelString("kernelFunction", "HIK");
+        }
+
+        static SettingsModelFilterString createColumnSelectionModel() {
+                return new SettingsModelFilterString("Column Filter");
+        }
+
+        static SettingsModelString createClassColumnSelectionModel() {
+                return new SettingsModelString("Class", "");
+        }
 
         /* SettingsModels */
         private SettingsModelInteger m_numberOfNeighborsModel = createNumberOfNeighborsModel();
+        private SettingsModelString m_kernelFunctionModel = createKernelFunctionSelectionModel();
+        private SettingsModelFilterString m_columnSelection = createColumnSelectionModel();
+        private SettingsModelString m_classColumn = createClassColumnSelectionModel();
 
         /* Resulting BufferedDataTable */
         private BufferedDataTable m_data;
@@ -136,8 +153,11 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
         @SuppressWarnings({"unchecked"})
         protected BufferedDataTable[] execute(final BufferedDataTable[] inData, final ExecutionContext exec) throws Exception {
 
-                final BufferedDataContainer container = exec.createDataContainer(createOutSpec(m_inTableSpec)[0]);
+                final BufferedDataTable trainingData = inData[0];
+                final BufferedDataTable testData = inData[1];
+                final BufferedDataContainer container = exec.createDataContainer(createOutSpec(testData.getDataTableSpec())[0]);
 
+                KNFST knfst = null;
                 double[] scores = knfst.scoreTestData(testData);
 
                 // add options for different normalizations
@@ -150,7 +170,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
                 int scoreIterator = 0;
 
-                for (DataRow row : data) {
+                for (DataRow row : testData) {
                         DataCell[] cells = new DataCell[row.getNumCells() + 1];
                         for (int c = 0; c < cells.length; c++) {
                                 cells[c] = (c < cells.length - 1) ? row.getCell(c) : new DoubleCell(scores[scoreIterator++]);
