@@ -49,6 +49,7 @@
 package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 
 import java.io.File;
+import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
 
@@ -57,6 +58,9 @@ import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
+import org.knime.core.data.DoubleValue;
+import org.knime.core.data.NominalValue;
+import org.knime.core.data.container.ColumnRearranger;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.node.BufferedDataContainer;
@@ -137,6 +141,31 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 final DataTableSpec trainingTableSpec = (DataTableSpec) inSpecs[0];
                 final DataTableSpec testTableSpec = (DataTableSpec) inSpecs[1];
 
+                // Check for class column
+                DataColumnSpec classColSpec = trainingTableSpec.getColumnSpec(m_classColumn.getStringValue());
+                if (classColSpec == null || !classColSpec.getType().isCompatible(NominalValue.class)) {
+                        for (int i = trainingTableSpec.getNumColumns() - 1; i >= 0; i--) {
+                                if (trainingTableSpec.getColumnSpec(i).getType().isCompatible(NominalValue.class)) {
+                                        m_classColumn.setStringValue(trainingTableSpec.getColumnSpec(i).getName());
+                                        break;
+                                } else if (i == 0)
+                                        throw new InvalidSettingsException("Table contains no nominal attribute for classification.");
+                        }
+                }
+
+                // Check if selected columns from the training table are also in the test table
+                // Also check compatibility of selected columns
+
+                List<String> includedCols = m_columnSelection.getIncludeList();
+                for (String col : includedCols) {
+                        if (!trainingTableSpec.getColumnSpec(col).getType().isCompatible(DoubleValue.class)) {
+                                throw new InvalidSettingsException("Selected columns must be compatible with DoubleValue!");
+                        }
+                        if (!testTableSpec.containsName(col)) {
+                                throw new InvalidSettingsException("Selected columns need also be contained in the Test Table");
+                        }
+                }
+
                 return createOutSpec(testTableSpec);
         }
 
@@ -150,12 +179,22 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
          * {@inheritDoc}
          */
         @Override
-        @SuppressWarnings({"unchecked"})
+        @SuppressWarnings({})
         protected BufferedDataTable[] execute(final BufferedDataTable[] inData, final ExecutionContext exec) throws Exception {
 
                 final BufferedDataTable trainingData = inData[0];
                 final BufferedDataTable testData = inData[1];
                 final BufferedDataContainer container = exec.createDataContainer(createOutSpec(testData.getDataTableSpec())[0]);
+
+                ColumnRearranger trainingRearranger = new ColumnRearranger(trainingData.getDataTableSpec());
+                ColumnRearranger testRearranger = new ColumnRearranger(testData.getDataTableSpec());
+                List<String> excludedCols = m_columnSelection.getExcludeList();
+
+                trainingRearranger.remove((String[]) excludedCols.toArray());
+                testRearranger.remove((String[]) excludedCols.toArray());
+
+                BufferedDataTable training = exec.createColumnRearrangeTable(trainingData, trainingRearranger, exec);
+                BufferedDataTable test = exec.createColumnRearrangeTable(testData, testRearranger, exec);
 
                 KNFST knfst = null;
                 double[] scores = knfst.scoreTestData(testData);
