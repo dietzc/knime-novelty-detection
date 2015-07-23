@@ -74,7 +74,6 @@ import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
-import org.knime.core.node.port.PortType;
 import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
 import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObject;
 import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObjectSpec;
@@ -116,7 +115,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
          * Constructor LocalNoveltyScorerNodeModel
          */
         public LocalNoveltyScorerNodeModel() {
-                super(new PortType[] {KNFSTPortObject.TYPE, BufferedDataTable.TYPE}, new PortType[] {BufferedDataTable.TYPE});
+                super(2, 1);
         }
 
         /**
