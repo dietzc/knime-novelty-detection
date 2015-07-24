@@ -59,7 +59,7 @@ public class KernelCalculator implements Externalizable {
          * Output:  nxm matrix containing the similarities of n test samples with m training samples
          */
         public RealMatrix kernelize(BufferedDataTable testData) {
-                return calculateKernelMatrix(m_trainingData, testData);
+                return calculateKernelMatrix(m_trainingData, readBufferedDataTable(testData));
         }
 
         public RealMatrix kernelize(double[][] testData) {
