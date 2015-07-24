@@ -49,6 +49,7 @@
 package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 
 import java.io.File;
+import java.util.Iterator;
 import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
@@ -188,19 +189,19 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
         @SuppressWarnings({})
         protected BufferedDataTable[] execute(final BufferedDataTable[] inData, final ExecutionContext exec) throws Exception {
 
-                final BufferedDataTable trainingData = inData[0];
-                final BufferedDataTable testData = inData[1];
-                final BufferedDataContainer container = exec.createDataContainer(createOutSpec(testData.getDataTableSpec())[0]);
+                final BufferedDataTable trainingIn = inData[0];
+                final BufferedDataTable testIn = inData[1];
+                final BufferedDataContainer container = exec.createDataContainer(createOutSpec(testIn.getDataTableSpec())[0]);
 
-                ColumnRearranger trainingRearranger = new ColumnRearranger(trainingData.getDataTableSpec());
-                ColumnRearranger testRearranger = new ColumnRearranger(testData.getDataTableSpec());
+                ColumnRearranger trainingRearranger = new ColumnRearranger(trainingIn.getDataTableSpec());
+                ColumnRearranger testRearranger = new ColumnRearranger(testIn.getDataTableSpec());
                 List<String> excludedCols = m_columnSelection.getExcludeList();
 
                 trainingRearranger.remove((String[]) excludedCols.toArray());
                 testRearranger.remove((String[]) excludedCols.toArray());
 
-                BufferedDataTable training = exec.createColumnRearrangeTable(trainingData, trainingRearranger, exec);
-                BufferedDataTable test = exec.createColumnRearrangeTable(testData, testRearranger, exec);
+                BufferedDataTable trainingData = exec.createColumnRearrangeTable(trainingIn, trainingRearranger, exec);
+                BufferedDataTable testData = exec.createColumnRearrangeTable(testIn, testRearranger, exec);
 
                 // Get KernelFunction
                 KernelFunction kernelFunction = null;
@@ -220,13 +221,32 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 }
 
                 // Create KernelCalculator
-                KernelCalculator kernelCalculator = new KernelCalculator(kernelFunction);
+                KernelCalculator kernelCalculator = new KernelCalculator(trainingData, kernelFunction);
 
                 // Get global KernelMatrix
-                RealMatrix globalKernelMatrix = kernelCalculator.kernelize(training, test);
+                RealMatrix globalKernelMatrix = kernelCalculator.kernelize(testData);
+
+                // Calculate distance Matrix
+                final RealMatrix distanceMatrix = globalKernelMatrix.createMatrix(globalKernelMatrix.getRowDimension(),
+                                globalKernelMatrix.getColumnDimension());
+                Iterator<DataRow> trainingIterator = trainingData.iterator();
+                Iterator<DataRow> testIterator = trainingData.iterator();
+                for (int r = 0; r < globalKernelMatrix.getRowDimension(); r++) {
+                        for (int c = 0; c < globalKernelMatrix.getColumnDimension(); c++) {
+                                DataRow training = trainingIterator.next();
+                                DataRow test = testIterator.next();
+                                double distance = kernelFunction.calculate(test, test) + kernelFunction.calculate(training, training) - 2
+                                                * globalKernelMatrix.getEntry(r, c);
+                                distanceMatrix.setEntry(r, c, distance);
+                        }
+                }
+
+                for (DataRow testRow : testData) {
+
+                }
 
                 KNFST knfst = null;
-                double[] scores = knfst.scoreTestData(testData);
+                double[] scores = knfst.scoreTestData(testIn);
 
                 // add options for different normalizations
                 double normalizer = getMin(knfst.getBetweenClassDistances());
@@ -238,7 +258,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
                 int scoreIterator = 0;
 
-                for (DataRow row : testData) {
+                for (DataRow row : testIn) {
                         DataCell[] cells = new DataCell[row.getNumCells() + 1];
                         for (int c = 0; c < cells.length; c++) {
                                 cells[c] = (c < cells.length - 1) ? row.getCell(c) : new DoubleCell(scores[scoreIterator++]);
