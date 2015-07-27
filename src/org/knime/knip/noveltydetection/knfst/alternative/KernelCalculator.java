@@ -66,6 +66,10 @@ public class KernelCalculator implements Externalizable {
                 return calculateKernelMatrix(m_trainingData, testData);
         }
 
+        public RealMatrix kernelize(double[][] trainingData, double[][] testData) {
+                return calculateKernelMatrix(trainingData, testData);
+        }
+
         public int getNumTrainingSamples() {
                 return m_rowCount;
         }
