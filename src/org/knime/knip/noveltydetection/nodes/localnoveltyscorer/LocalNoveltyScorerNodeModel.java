@@ -55,6 +55,7 @@ import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
 
+import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
@@ -257,7 +258,8 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
                 // Calculate Local model for each row in the test table
                 int colIterator = 0;
-                for (int r = 0; r < testData.length; r++) {
+                int currentRowIdx = 0;
+                for (DataRow row : testIn) {
                         // Find k nearest neighbors
                         ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(distanceMatrix.getColumn(colIterator));
                         ValueIndexPair[] neighbors = ValueIndexPair.getKMinima(distances, numberOfNeighbors);
@@ -302,30 +304,22 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                         // Get local kernel matrix for testing from global kernel matrix
                         double[] localTestKernelMatrixData = new double[numberOfNeighbors];
                         for (int i = 0; i < numberOfNeighbors; i++) {
-                                localTestKernelMatrixData[i] = globalKernelMatrix.getEntry(neighbors[i].getIndex(), r);
+                                localTestKernelMatrixData[i] = globalKernelMatrix.getEntry(neighbors[i].getIndex(), currentRowIdx);
                         }
+                        RealMatrix localTestKernelMatrix = MatrixUtils.createColumnRealMatrix(localTestKernelMatrixData);
 
-                }
+                        // Score test sample with local model
+                        double normalizer = getMin(localModel.getBetweenClassDistances());
+                        double score = localModel.scoreTestData(localTestKernelMatrix)[0] / normalizer;
 
-                KNFST knfst = null;
-                double[] scores = knfst.scoreTestData(testIn);
-
-                // add options for different normalizations
-                double normalizer = getMin(knfst.getBetweenClassDistances());
-
-                // normalize scores
-                for (int i = 0; i < scores.length; i++) {
-                        scores[i] = scores[i] / normalizer;
-                }
-
-                int scoreIterator = 0;
-
-                for (DataRow row : testIn) {
+                        // Write result into data table
                         DataCell[] cells = new DataCell[row.getNumCells() + 1];
                         for (int c = 0; c < cells.length; c++) {
-                                cells[c] = (c < cells.length - 1) ? row.getCell(c) : new DoubleCell(scores[scoreIterator++]);
+                                cells[c] = (c < cells.length - 1) ? row.getCell(c) : new DoubleCell(score);
                         }
                         container.addRowToTable(new DefaultRow(row.getKey(), cells));
+
+                        currentRowIdx++;
                 }
 
                 container.close();
