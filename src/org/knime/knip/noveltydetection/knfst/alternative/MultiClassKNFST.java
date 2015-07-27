@@ -89,6 +89,12 @@ public class MultiClassKNFST extends KNFST {
                 return score(kernelMatrix);
         }
 
+        @Override
+        public double[] scoreTestData(RealMatrix kernelMatrix) {
+                // TODO Auto-generated method stub
+                return score(kernelMatrix);
+        }
+
         private double[] score(final RealMatrix kernelMatrix) {
                 // projected test samples:
                 long time1 = System.currentTimeMillis();

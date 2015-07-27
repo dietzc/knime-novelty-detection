@@ -30,6 +30,8 @@ public abstract class KNFST implements Externalizable {
 
         public abstract double[] scoreTestData(double[][] test);
 
+        public abstract double[] scoreTestData(RealMatrix kernelMatrix);
+
         public static RealMatrix projection(final RealMatrix kernelMatrix, final String[] labels) {
 
                 ArrayList<ClassWrapper> classes = ClassWrapper.classes(labels);

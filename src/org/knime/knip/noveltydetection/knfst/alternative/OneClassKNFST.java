@@ -79,6 +79,11 @@ public class OneClassKNFST extends KNFST {
                 return score(kernelMatrix);
         }
 
+        @Override
+        public double[] scoreTestData(RealMatrix kernelMatrix) {
+                return score(kernelMatrix);
+        }
+
         private double[] score(final RealMatrix kernelMatrix) {
                 // projected test samples:
                 final RealMatrix projectionVectors = kernelMatrix.transpose().multiply(m_projection);
