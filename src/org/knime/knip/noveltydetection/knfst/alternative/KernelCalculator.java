@@ -112,7 +112,7 @@ public class KernelCalculator implements Externalizable {
                 return kernelMatrix;
         }
 
-        private static double[][] readBufferedDataTable(final BufferedDataTable table) {
+        public static double[][] readBufferedDataTable(final BufferedDataTable table) {
                 final double[][] data = new double[table.getRowCount()][table.getDataTableSpec().getNumColumns()];
 
                 final Iterator<DataRow> iterator = table.iterator();
