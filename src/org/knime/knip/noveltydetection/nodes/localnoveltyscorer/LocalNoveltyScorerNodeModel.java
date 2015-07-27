@@ -257,7 +257,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
                 // Calculate Local model for each row in the test table
                 int colIterator = 0;
-                for (double[] testRow : testData) {
+                for (int r = 0; r < testData.length; r++) {
                         // Find k nearest neighbors
                         ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(distanceMatrix.getColumn(colIterator));
                         ValueIndexPair[] neighbors = ValueIndexPair.getKMinima(distances, numberOfNeighbors);
@@ -297,6 +297,12 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                                 // Handle multiple classes  
                         } else {
                                 localModel = new MultiClassKNFST(localTrainingKernelMatrix, localLabels);
+                        }
+
+                        // Get local kernel matrix for testing from global kernel matrix
+                        double[] localTestKernelMatrixData = new double[numberOfNeighbors];
+                        for (int i = 0; i < numberOfNeighbors; i++) {
+                                localTestKernelMatrixData[i] = globalKernelMatrix.getEntry(neighbors[i].getIndex(), r);
                         }
 
                 }
