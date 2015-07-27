@@ -39,6 +39,31 @@ public class OneClassKNFST extends KNFST {
                 this.m_betweenClassDistances = new double[] {Math.abs(m_targetPoints.getEntry(0, 0))};
         }
 
+        public OneClassKNFST(final RealMatrix kernelMatrix) {
+                final int n = kernelMatrix.getRowDimension();
+
+                // include dot products of training samples and the origin in feature space (these dot products are always zero!)
+                final RealMatrix k = MatrixFunctions.concatVertically(
+                                MatrixFunctions.concatHorizontally(kernelMatrix, MatrixUtils.createRealMatrix(kernelMatrix.getRowDimension(), 1)),
+                                MatrixUtils.createRealMatrix(1, kernelMatrix.getColumnDimension() + 1));
+
+                // create one-class labels + a different label for the origin
+                final String[] labels = new String[n + 1];
+                for (int l = 0; l <= n; l++)
+                        labels[l] = (l == n) ? "0" : "1";
+
+                // get model parameters
+                final RealMatrix projection = projection(k, labels);
+                final int[] indices = new int[n];
+                for (int i = 0; i < n; i++)
+                        indices[i] = i;
+                RealMatrix projectionTraining = k.getSubMatrix(0, n - 1, 0, k.getColumnDimension() - 1).multiply(projection);
+                this.m_targetPoints = MatrixUtils.createRowRealMatrix(MatrixFunctions.columnMeans(
+                                k.getSubMatrix(0, n - 1, 0, k.getColumnDimension() - 1).multiply(projection)).toArray());
+                this.m_projection = projection.getSubMatrix(0, n - 1, 0, projection.getColumnDimension() - 1);
+                this.m_betweenClassDistances = new double[] {Math.abs(m_targetPoints.getEntry(0, 0))};
+        }
+
         @Override
         public double[] scoreTestData(final BufferedDataTable test) {
 
