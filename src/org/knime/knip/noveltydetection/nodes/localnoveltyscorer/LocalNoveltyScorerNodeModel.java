@@ -49,7 +49,8 @@
 package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 
 import java.io.File;
-import java.util.Iterator;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
@@ -62,6 +63,7 @@ import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.DoubleValue;
 import org.knime.core.data.NominalValue;
+import org.knime.core.data.StringValue;
 import org.knime.core.data.container.ColumnRearranger;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
@@ -196,12 +198,22 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 ColumnRearranger trainingRearranger = new ColumnRearranger(trainingIn.getDataTableSpec());
                 ColumnRearranger testRearranger = new ColumnRearranger(testIn.getDataTableSpec());
                 List<String> excludedCols = m_columnSelection.getExcludeList();
+                int numberOfNeighbors = m_numberOfNeighborsModel.getIntValue();
 
                 trainingRearranger.remove((String[]) excludedCols.toArray());
                 testRearranger.remove((String[]) excludedCols.toArray());
 
-                BufferedDataTable trainingData = exec.createColumnRearrangeTable(trainingIn, trainingRearranger, exec);
-                BufferedDataTable testData = exec.createColumnRearrangeTable(testIn, testRearranger, exec);
+                double[][] trainingData = KernelCalculator.readBufferedDataTable(exec
+                                .createColumnRearrangeTable(trainingIn, trainingRearranger, exec));
+                double[][] testData = KernelCalculator.readBufferedDataTable(exec.createColumnRearrangeTable(testIn, testRearranger, exec));
+
+                // Get labels for training Data
+                final int classColIdx = trainingIn.getDataTableSpec().findColumnIndex(m_classColumn.getStringValue());
+                String[] labels = new String[trainingIn.getRowCount()];
+                int l = 0;
+                for (DataRow row : trainingIn) {
+                        labels[l++] = ((StringValue) row.getCell(classColIdx)).getStringValue();
+                }
 
                 // Get KernelFunction
                 KernelFunction kernelFunction = null;
@@ -229,19 +241,46 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 // Calculate distance Matrix
                 final RealMatrix distanceMatrix = globalKernelMatrix.createMatrix(globalKernelMatrix.getRowDimension(),
                                 globalKernelMatrix.getColumnDimension());
-                Iterator<DataRow> trainingIterator = trainingData.iterator();
-                Iterator<DataRow> testIterator = trainingData.iterator();
+                int trainingIterator = 0;
+                int testIterator = 0;
                 for (int r = 0; r < globalKernelMatrix.getRowDimension(); r++) {
                         for (int c = 0; c < globalKernelMatrix.getColumnDimension(); c++) {
-                                DataRow training = trainingIterator.next();
-                                DataRow test = testIterator.next();
+                                double[] training = trainingData[trainingIterator++];
+                                double[] test = testData[testIterator++];
                                 double distance = kernelFunction.calculate(test, test) + kernelFunction.calculate(training, training) - 2
                                                 * globalKernelMatrix.getEntry(r, c);
                                 distanceMatrix.setEntry(r, c, distance);
                         }
                 }
 
-                for (DataRow testRow : testData) {
+                // Calculate Local model for each row in the test table
+                int colIterator = 0;
+                for (double[] testRow : testData) {
+                        // Find k nearest neighbors
+                        ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(distanceMatrix.getColumn(colIterator));
+                        ValueIndexPair[] neighbors = ValueIndexPair.getKMinima(distances, numberOfNeighbors);
+
+                        // Sort neighbors according to class
+                        // NOTE: Ordering by index accomplishes that because the samples were ordered in the input table
+                        Arrays.sort(neighbors, new Comparator<ValueIndexPair>() {
+                                public int compare(ValueIndexPair o1, ValueIndexPair o2) {
+                                        return o1.getIndex() - o2.getIndex();
+                                }
+                        });
+
+                        // Get local training data and labels, also check if this is a one class problem
+                        double[][] localTrainingData = new double[numberOfNeighbors][trainingData[0].length];
+                        String[] localLabels = new String[numberOfNeighbors];
+                        boolean oneclass = true;
+                        String currentLabel = labels[neighbors[0].getIndex()];
+                        for (int i = 0; i < numberOfNeighbors; i++) {
+                                localTrainingData[i] = trainingData[neighbors[i].getIndex()];
+                                String label = labels[neighbors[i].getIndex()];
+                                if (!label.equals(currentLabel)) {
+                                        oneclass = false;
+                                }
+                                localLabels[i] = label;
+                        }
 
                 }
 
