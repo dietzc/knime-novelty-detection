@@ -85,6 +85,8 @@ import org.knime.knip.noveltydetection.knfst.alternative.HIKKernel;
 import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
 import org.knime.knip.noveltydetection.knfst.alternative.KernelCalculator;
 import org.knime.knip.noveltydetection.knfst.alternative.KernelFunction;
+import org.knime.knip.noveltydetection.knfst.alternative.MultiClassKNFST;
+import org.knime.knip.noveltydetection.knfst.alternative.OneClassKNFST;
 import org.knime.knip.noveltydetection.knfst.alternative.RBFKernel;
 
 /**
@@ -271,15 +273,30 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                         // Get local training data and labels, also check if this is a one class problem
                         double[][] localTrainingData = new double[numberOfNeighbors][trainingData[0].length];
                         String[] localLabels = new String[numberOfNeighbors];
-                        boolean oneclass = true;
+                        boolean oneClass = true;
                         String currentLabel = labels[neighbors[0].getIndex()];
                         for (int i = 0; i < numberOfNeighbors; i++) {
                                 localTrainingData[i] = trainingData[neighbors[i].getIndex()];
                                 String label = labels[neighbors[i].getIndex()];
                                 if (!label.equals(currentLabel)) {
-                                        oneclass = false;
+                                        oneClass = false;
                                 }
                                 localLabels[i] = label;
+                        }
+
+                        // Calculate local kernel Matrix for training
+                        RealMatrix localTrainingKernelMatrix = kernelCalculator.kernelize(localTrainingData, localTrainingData);
+
+                        // Create KNFST model
+                        KNFST localModel = null;
+
+                        // Handle one class
+                        if (oneClass) {
+                                localModel = new OneClassKNFST(localTrainingKernelMatrix);
+
+                                // Handle multiple classes  
+                        } else {
+                                localModel = new MultiClassKNFST(localTrainingKernelMatrix, localLabels);
                         }
 
                 }
