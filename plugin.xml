@@ -11,7 +11,12 @@
       <node
             expert-flag="false"
             factory-class="org.knime.knip.noveltydetection.nodes.knfstnoveltyscorer.KNFSTNoveltyScorerNodeFactory"
-            id="org.knime.knip.noveltydetection.nodes.KNFSTNoveltyScorerNodeFactory">
+            id="org.knime.knip.noveltydetection.nodes.knfstnoveltyscorer.KNFSTNoveltyScorerNodeFactory">
+      </node>
+      <node
+            expert-flag="false"
+            factory-class="org.knime.knip.noveltydetection.nodes.localnoveltyscorer.LocalNoveltyScorerNodeFactory"
+            id="org.knime.knip.noveltydetection.nodes.localnoveltyscorer.LocalNoveltyScorerNodeFactory">
       </node>
    </extension>
 </plugin>
