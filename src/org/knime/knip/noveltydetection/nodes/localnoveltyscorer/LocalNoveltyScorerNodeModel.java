@@ -120,7 +120,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
         }
 
         static SettingsModelFilterString createColumnSelectionModel() {
-                return new SettingsModelFilterString("Column Filter");
+                return new SettingsModelFilterString("Column Filter Local Novelty Scorer");
         }
 
         static SettingsModelString createClassColumnSelectionModel() {
@@ -200,11 +200,11 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
                 ColumnRearranger trainingRearranger = new ColumnRearranger(trainingIn.getDataTableSpec());
                 ColumnRearranger testRearranger = new ColumnRearranger(testIn.getDataTableSpec());
-                List<String> excludedCols = m_columnSelection.getExcludeList();
+                List<String> includedCols = m_columnSelection.getIncludeList();
                 int numberOfNeighbors = m_numberOfNeighborsModel.getIntValue();
 
-                trainingRearranger.remove((String[]) excludedCols.toArray());
-                testRearranger.remove((String[]) excludedCols.toArray());
+                trainingRearranger.keepOnly(includedCols.toArray(new String[includedCols.size()]));
+                testRearranger.keepOnly(includedCols.toArray(new String[includedCols.size()]));
 
                 double[][] trainingData = KernelCalculator.readBufferedDataTable(exec
                                 .createColumnRearrangeTable(trainingIn, trainingRearranger, exec));
@@ -244,12 +244,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 // Calculate distance Matrix
                 final RealMatrix distanceMatrix = globalKernelMatrix.createMatrix(globalKernelMatrix.getRowDimension(),
                                 globalKernelMatrix.getColumnDimension());
-                int trainingIterator = 0;
-                int testIterator = 0;
                 for (int r = 0; r < globalKernelMatrix.getRowDimension(); r++) {
                         for (int c = 0; c < globalKernelMatrix.getColumnDimension(); c++) {
-                                double[] training = trainingData[trainingIterator++];
-                                double[] test = testData[testIterator++];
+                                double[] training = trainingData[r];
+                                double[] test = testData[c];
                                 double distance = kernelFunction.calculate(test, test) + kernelFunction.calculate(training, training) - 2
                                                 * globalKernelMatrix.getEntry(r, c);
                                 distanceMatrix.setEntry(r, c, distance);
@@ -348,7 +346,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
          */
         @Override
         protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
-
+                m_kernelFunctionModel.loadSettingsFrom(settings);
+                m_columnSelection.loadSettingsFrom(settings);
+                m_classColumn.loadSettingsFrom(settings);
+                m_numberOfNeighborsModel.loadSettingsFrom(settings);
         }
 
         /**
@@ -372,7 +373,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
          */
         @Override
         protected void saveSettingsTo(final NodeSettingsWO settings) {
-
+                m_kernelFunctionModel.saveSettingsTo(settings);
+                m_columnSelection.saveSettingsTo(settings);
+                m_classColumn.saveSettingsTo(settings);
+                m_numberOfNeighborsModel.saveSettingsTo(settings);
         }
 
         /**
@@ -388,7 +392,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
          */
         @Override
         protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-
+                m_kernelFunctionModel.validateSettings(settings);
+                m_columnSelection.validateSettings(settings);
+                m_classColumn.validateSettings(settings);
+                m_numberOfNeighborsModel.validateSettings(settings);
         }
 
         /****************** Private helper methods *************************************************/

@@ -51,7 +51,7 @@ public class ValueIndexPair {
 
                 }
 
-                return (ValueIndexPair[]) maxHeap.toArray();
+                return maxHeap.toArray(new ValueIndexPair[maxHeap.size()]);
 
         }
 

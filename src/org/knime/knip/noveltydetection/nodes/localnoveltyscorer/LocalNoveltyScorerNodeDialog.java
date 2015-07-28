@@ -1,5 +1,6 @@
 package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 
+import org.knime.core.data.DoubleValue;
 import org.knime.core.data.StringValue;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.defaultnodesettings.DialogComponentColumnFilter;
@@ -15,7 +16,8 @@ public class LocalNoveltyScorerNodeDialog<L extends Comparable<L>> extends Defau
         @SuppressWarnings("unchecked")
         public LocalNoveltyScorerNodeDialog() {
 
-                addDialogComponent(new DialogComponentColumnFilter(LocalNoveltyScorerNodeModel.createColumnSelectionModel(), 0, false));
+                addDialogComponent(new DialogComponentColumnFilter(LocalNoveltyScorerNodeModel.createColumnSelectionModel(), 0, true,
+                                DoubleValue.class));
 
                 addDialogComponent(new DialogComponentColumnNameSelection(LocalNoveltyScorerNodeModel.createClassColumnSelectionModel(),
                                 "Select class column", 0, StringValue.class));
