@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
 <knimeNode type="Predictor" icon="cropper.png">
-	<name>KNFST Novelty Scorer</name>
+	<name>Local Novelty Scorer</name>
 	<shortDescription>
-		Scores the novelty of test instances based on a KNFST-model from a KNFST Learner node.
+		Scores the novelty of test instances based on a local KNFST model trained with the k nearest neighbors in kernel space.
 	</shortDescription>
 
 	<fullDescription>
