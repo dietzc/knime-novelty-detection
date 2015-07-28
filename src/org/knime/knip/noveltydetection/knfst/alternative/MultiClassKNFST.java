@@ -72,9 +72,7 @@ public class MultiClassKNFST extends KNFST {
         @Override
         public double[] scoreTestData(BufferedDataTable test) {
                 // calculate nxm kernel matrix containing similarities between n training samples and m test samples
-                long time = System.currentTimeMillis();
                 RealMatrix kernelMatrix = m_kernel.kernelize(test);
-                System.out.println("Kernelizing: " + (System.currentTimeMillis() - time));
 
                 return score(kernelMatrix);
         }
@@ -82,9 +80,7 @@ public class MultiClassKNFST extends KNFST {
         @Override
         public double[] scoreTestData(double[][] test) {
                 // calculate nxm kernel matrix containing similarities between n training samples and m test samples
-                long time = System.currentTimeMillis();
                 RealMatrix kernelMatrix = m_kernel.kernelize(test);
-                System.out.println("Kernelizing: " + (System.currentTimeMillis() - time));
 
                 return score(kernelMatrix);
         }
@@ -101,15 +97,10 @@ public class MultiClassKNFST extends KNFST {
                 final RealMatrix projectionVectors = kernelMatrix.transpose().multiply(m_projection);
 
                 //squared euclidean distances to target points:
-                long time2 = System.currentTimeMillis();
-                System.out.println("Projecting test samples: " + (time2 - time1));
                 final RealMatrix squared_distances = squared_euclidean_distances(projectionVectors, m_targetPoints);
 
                 // novelty scores as minimum distance to one of the target points
-                long time3 = System.currentTimeMillis();
-                System.out.println("Calculating squared euclidean distances: " + (time3 - time2));
                 final RealVector scoreVector = MatrixFunctions.sqrt(MatrixFunctions.rowMins(squared_distances));
-                System.out.println("Calculating score vector: " + (System.currentTimeMillis() - time3));
                 return scoreVector.toArray();
         }
 
