@@ -257,6 +257,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 // Calculate Local model for each row in the test table
                 int colIterator = 0;
                 int currentRowIdx = 0;
+                final int rowCount = testIn.getRowCount();
                 for (DataRow row : testIn) {
                         // Find k nearest neighbors
                         ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(distanceMatrix.getColumn(colIterator));
@@ -317,6 +318,8 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                         }
                         container.addRowToTable(new DefaultRow(row.getKey(), cells));
 
+                        exec.checkCanceled();
+                        exec.setProgress((double) currentRowIdx / rowCount);
                         currentRowIdx++;
                 }
 
