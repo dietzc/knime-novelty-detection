@@ -70,7 +70,7 @@ public class MultiClassKNFST extends KNFST {
         }
 
         @Override
-        public double[] scoreTestData(BufferedDataTable test) {
+        public NoveltyScores scoreTestData(BufferedDataTable test) {
                 // calculate nxm kernel matrix containing similarities between n training samples and m test samples
                 RealMatrix kernelMatrix = m_kernel.kernelize(test);
 
@@ -78,7 +78,7 @@ public class MultiClassKNFST extends KNFST {
         }
 
         @Override
-        public double[] scoreTestData(double[][] test) {
+        public NoveltyScores scoreTestData(double[][] test) {
                 // calculate nxm kernel matrix containing similarities between n training samples and m test samples
                 RealMatrix kernelMatrix = m_kernel.kernelize(test);
 
@@ -86,12 +86,12 @@ public class MultiClassKNFST extends KNFST {
         }
 
         @Override
-        public double[] scoreTestData(RealMatrix kernelMatrix) {
+        public NoveltyScores scoreTestData(RealMatrix kernelMatrix) {
                 // TODO Auto-generated method stub
                 return score(kernelMatrix);
         }
 
-        private double[] score(final RealMatrix kernelMatrix) {
+        private NoveltyScores score(final RealMatrix kernelMatrix) {
                 // projected test samples:
                 long time1 = System.currentTimeMillis();
                 final RealMatrix projectionVectors = kernelMatrix.transpose().multiply(m_projection);
@@ -101,7 +101,7 @@ public class MultiClassKNFST extends KNFST {
 
                 // novelty scores as minimum distance to one of the target points
                 final RealVector scoreVector = MatrixFunctions.sqrt(MatrixFunctions.rowMins(squared_distances));
-                return scoreVector.toArray();
+                return new NoveltyScores(scoreVector.toArray(), projectionVectors);
         }
 
         private RealMatrix squared_euclidean_distances(final RealMatrix x, final RealMatrix y) {

@@ -26,11 +26,11 @@ public abstract class KNFST implements Externalizable {
                 m_kernel = kernel;
         }
 
-        public abstract double[] scoreTestData(BufferedDataTable test);
+        public abstract NoveltyScores scoreTestData(BufferedDataTable test);
 
-        public abstract double[] scoreTestData(double[][] test);
+        public abstract NoveltyScores scoreTestData(double[][] test);
 
-        public abstract double[] scoreTestData(RealMatrix kernelMatrix);
+        public abstract NoveltyScores scoreTestData(RealMatrix kernelMatrix);
 
         public static RealMatrix projection(final RealMatrix kernelMatrix, final String[] labels) {
 
@@ -248,5 +248,13 @@ public abstract class KNFST implements Externalizable {
 
         public double[] getBetweenClassDistances() {
                 return m_betweenClassDistances;
+        }
+
+        public KernelCalculator getKernel() {
+                return m_kernel;
+        }
+
+        public RealMatrix getProjection() {
+                return m_projection;
         }
 }

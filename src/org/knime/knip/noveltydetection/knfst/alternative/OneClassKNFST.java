@@ -65,7 +65,7 @@ public class OneClassKNFST extends KNFST {
         }
 
         @Override
-        public double[] scoreTestData(final BufferedDataTable test) {
+        public NoveltyScores scoreTestData(final BufferedDataTable test) {
 
                 final RealMatrix kernelMatrix = m_kernel.kernelize(test);
 
@@ -73,18 +73,18 @@ public class OneClassKNFST extends KNFST {
         }
 
         @Override
-        public double[] scoreTestData(final double[][] test) {
+        public NoveltyScores scoreTestData(final double[][] test) {
                 final RealMatrix kernelMatrix = m_kernel.kernelize(test);
 
                 return score(kernelMatrix);
         }
 
         @Override
-        public double[] scoreTestData(RealMatrix kernelMatrix) {
+        public NoveltyScores scoreTestData(RealMatrix kernelMatrix) {
                 return score(kernelMatrix);
         }
 
-        private double[] score(final RealMatrix kernelMatrix) {
+        private NoveltyScores score(final RealMatrix kernelMatrix) {
                 // projected test samples:
                 final RealMatrix projectionVectors = kernelMatrix.transpose().multiply(m_projection);
 
@@ -95,6 +95,6 @@ public class OneClassKNFST extends KNFST {
                 // distances to the target value:
                 final RealVector scoresVector = MatrixFunctions.sqrt(MatrixFunctions.rowSums(MatrixFunctions.multiplyElementWise(diff, diff)));
 
-                return scoresVector.toArray();
+                return new NoveltyScores(scoresVector.toArray(), projectionVectors);
         }
 }

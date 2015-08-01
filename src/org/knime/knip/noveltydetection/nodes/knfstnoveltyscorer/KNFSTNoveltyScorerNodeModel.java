@@ -53,6 +53,7 @@ import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
 
+import org.apache.commons.math3.linear.RealMatrix;
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
@@ -75,6 +76,7 @@ import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
 import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
+import org.knime.knip.noveltydetection.knfst.alternative.NoveltyScores;
 import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObject;
 import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObjectSpec;
 
@@ -179,25 +181,50 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
                 final BufferedDataTable testData = data;
 
-                System.out.println(testData.getDataTableSpec().getNumColumns());
+                NoveltyScores noveltyScores = knfst.scoreTestData(testData);
 
-                double[] scores = knfst.scoreTestData(testData);
+                int additionalCells = 0;
 
-                // add options for different normalizations
-                double normalizer = getMin(knfst.getBetweenClassDistances());
+                double[] scores = null;
+                if (m_appendNoveltyScore.getBooleanValue()) {
+                        scores = noveltyScores.getScores();
+                        // add options for different normalizations
+                        double normalizer = getMin(knfst.getBetweenClassDistances());
 
-                // normalize scores
-                for (int i = 0; i < scores.length; i++) {
-                        scores[i] = scores[i] / normalizer;
+                        // normalize scores
+                        for (int i = 0; i < scores.length; i++) {
+                                scores[i] = scores[i] / normalizer;
+                        }
+                        additionalCells++;
+                }
+
+                RealMatrix nullspaceCoordinates = null;
+                if (m_appendNullspaceCoordinates.getBooleanValue()) {
+                        nullspaceCoordinates = noveltyScores.getCoordinates();
+                        additionalCells += nullspaceCoordinates.getColumnDimension();
                 }
 
                 int scoreIterator = 0;
 
                 for (DataRow row : data) {
-                        DataCell[] cells = new DataCell[row.getNumCells() + 1];
-                        for (int c = 0; c < cells.length; c++) {
-                                cells[c] = (c < cells.length - 1) ? row.getCell(c) : new DoubleCell(scores[scoreIterator++]);
+                        DataCell[] cells = new DataCell[row.getNumCells() + additionalCells];
+                        int c = 0;
+                        for (; c < row.getNumCells(); c++) {
+                                cells[c] = row.getCell(c);
                         }
+
+                        if (m_appendNoveltyScore.getBooleanValue()) {
+                                cells[c++] = new DoubleCell(scores[scoreIterator]);
+                        }
+
+                        if (m_appendNullspaceCoordinates.getBooleanValue()) {
+
+                                for (int i = 0; i < nullspaceCoordinates.getColumnDimension(); c++) {
+                                        cells[c + i] = new DoubleCell(nullspaceCoordinates.getRow(scoreIterator)[i]);
+                                }
+                        }
+                        scoreIterator++;
+
                         container.addRowToTable(new DefaultRow(row.getKey(), cells));
                 }
 
