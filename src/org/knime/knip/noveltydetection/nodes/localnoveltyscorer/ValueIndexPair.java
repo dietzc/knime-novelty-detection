@@ -1,5 +1,6 @@
 package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 
+import java.util.Comparator;
 import java.util.PriorityQueue;
 
 public class ValueIndexPair {
@@ -29,7 +30,7 @@ public class ValueIndexPair {
                 return result;
         }
 
-        public static ValueIndexPair[] getKMinima(ValueIndexPair[] array, int k) {
+        public static ValueIndexPair[] getK(ValueIndexPair[] array, int k, Comparator<ValueIndexPair> comparator) {
                 if (k < 1) {
                         throw new IllegalArgumentException("k must be greater than zero!");
                 }
@@ -37,21 +38,21 @@ public class ValueIndexPair {
                         throw new IllegalArgumentException("k must be smaller or equal to the length of the array!");
                 }
 
-                PriorityQueue<ValueIndexPair> maxHeap = new PriorityQueue<ValueIndexPair>(new ValueIndexPairComparator());
+                PriorityQueue<ValueIndexPair> heap = new PriorityQueue<ValueIndexPair>(comparator);
 
                 for (int i = 0; i < array.length; i++) {
                         if (i < k) {
-                                maxHeap.add(array[i]);
+                                heap.add(array[i]);
                         } else {
-                                if (array[i].getValue() < maxHeap.peek().getValue()) {
-                                        maxHeap.poll();
-                                        maxHeap.add(array[i]);
+                                if (array[i].getValue() < heap.peek().getValue()) {
+                                        heap.poll();
+                                        heap.add(array[i]);
                                 }
                         }
 
                 }
 
-                return maxHeap.toArray(new ValueIndexPair[maxHeap.size()]);
+                return heap.toArray(new ValueIndexPair[heap.size()]);
 
         }
 

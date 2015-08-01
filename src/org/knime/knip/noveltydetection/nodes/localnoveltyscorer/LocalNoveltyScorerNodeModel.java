@@ -242,6 +242,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 RealMatrix globalKernelMatrix = kernelCalculator.kernelize(testData);
 
                 // Calculate distance Matrix
+                /*
                 final RealMatrix distanceMatrix = globalKernelMatrix.createMatrix(globalKernelMatrix.getRowDimension(),
                                 globalKernelMatrix.getColumnDimension());
                 for (int r = 0; r < globalKernelMatrix.getRowDimension(); r++) {
@@ -253,6 +254,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                                 distanceMatrix.setEntry(r, c, distance);
                         }
                 }
+                */
 
                 // Calculate Local model for each row in the test table
                 int colIterator = 0;
@@ -260,8 +262,14 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 final int rowCount = testIn.getRowCount();
                 for (DataRow row : testIn) {
                         // Find k nearest neighbors
-                        ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(distanceMatrix.getColumn(colIterator));
-                        ValueIndexPair[] neighbors = ValueIndexPair.getKMinima(distances, numberOfNeighbors);
+                        ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(globalKernelMatrix.getColumn(colIterator));
+                        Comparator<ValueIndexPair> comparator = new Comparator<ValueIndexPair>() {
+                                public int compare(ValueIndexPair o1, ValueIndexPair o2) {
+                                        // TODO Auto-generated method stub
+                                        return (o1.getValue() < o2.getValue()) ? 1 : ((o1.getValue() == o2.getValue()) ? 0 : -1);
+                                }
+                        };
+                        ValueIndexPair[] neighbors = ValueIndexPair.getK(distances, numberOfNeighbors, comparator);
 
                         // Sort neighbors according to class
                         // NOTE: Ordering by index accomplishes that because the samples were ordered in the input table
