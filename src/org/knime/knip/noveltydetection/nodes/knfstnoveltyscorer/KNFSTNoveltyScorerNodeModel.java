@@ -70,6 +70,7 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
@@ -90,15 +91,29 @@ import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObjectSpec;
 @SuppressWarnings("deprecation")
 public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel implements BufferedDataTableHolder {
 
+        static final boolean DEFAULT_APPEND_NOVELTY_SCORE = true;
+        static final boolean DEFAULT_APPEND_NULLSPACE_COORDINATES = false;
+
         /**
          * Helper
          *
          * @return SettingsModel to store img column
          */
 
+        static SettingsModelBoolean createAppendNoveltyScoreModel() {
+                return new SettingsModelBoolean("AppendNoveltyScoreModel", DEFAULT_APPEND_NOVELTY_SCORE);
+        }
+
+        static SettingsModelBoolean createAppendNullspaceCoordinates() {
+                return new SettingsModelBoolean("AppendNullspaceCoordinatesModel", DEFAULT_APPEND_NULLSPACE_COORDINATES);
+        }
+
         DataTableSpec m_inTableSpec;
 
         /* SettingsModels */
+
+        private SettingsModelBoolean m_appendNoveltyScore = createAppendNoveltyScoreModel();
+        private SettingsModelBoolean m_appendNullspaceCoordinates = createAppendNullspaceCoordinates();
 
         /* Resulting BufferedDataTable */
         private BufferedDataTable m_data;
