@@ -95,7 +95,8 @@ import org.knime.knip.noveltydetection.knfst.alternative.RBFKernel;
 public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel {
 
         static final int DATA_INPORT = 0;
-        static final String[] BACKGROUND_OPTIONS = new String[] {"Min Value of Result", "Max Value of Result", "Zero", "Source"};
+        static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK", "RBF"};
+        static final String DEFAULT_KERNEL = AVAILABLE_KERNELS[0];
 
         /**
          * Helper
@@ -103,7 +104,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
          * @return SettingsModel to store img column
          */
         static SettingsModelString createKernelFunctionSelectionModel() {
-                return new SettingsModelString("kernelFunction", "HIK");
+                return new SettingsModelString("kernelFunction", DEFAULT_KERNEL);
         }
 
         static SettingsModelFilterString createColumnSelectionModel() {
