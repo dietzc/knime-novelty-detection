@@ -1,5 +1,6 @@
 package org.knime.knip.noveltydetection.nodes.knfstlearner;
 
+import org.knime.core.data.DoubleValue;
 import org.knime.core.data.StringValue;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.defaultnodesettings.DialogComponentColumnFilter;
@@ -13,7 +14,8 @@ public class KNFSTLearnerNodeDialog<L extends Comparable<L>> extends DefaultNode
          */
         @SuppressWarnings("unchecked")
         public KNFSTLearnerNodeDialog() {
-                addDialogComponent(new DialogComponentColumnFilter(KNFSTLearnerNodeModel.createColumnSelectionModel(), 0, false));
+                addDialogComponent(new DialogComponentColumnFilter(KNFSTLearnerNodeModel.createColumnSelectionModel(),
+                                KNFSTLearnerNodeModel.DATA_INPORT, false, DoubleValue.class));
 
                 addDialogComponent(new DialogComponentColumnNameSelection(KNFSTLearnerNodeModel.createClassColumnSelectionModel(),
                                 "Select class column", 0, StringValue.class));
