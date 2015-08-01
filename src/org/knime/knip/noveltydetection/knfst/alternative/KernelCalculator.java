@@ -39,6 +39,10 @@ public class KernelCalculator implements Externalizable {
                 m_kernelFunction = kernelFunction;
         }
 
+        public KernelCalculator(KernelFunction kernelFunction) {
+                m_kernelFunction = kernelFunction;
+        }
+
         /* Returns kernel matrix containing similarities of the training data
          * Output:  mxm matrix containing similarities of the training data
          */
@@ -46,16 +50,24 @@ public class KernelCalculator implements Externalizable {
                 return calculateKernelMatrix(m_trainingData, m_trainingData);
         }
 
+        public RealMatrix kernelize(BufferedDataTable trainingData, BufferedDataTable testData) {
+                return calculateKernelMatrix(trainingData, testData);
+        }
+
         /* Returns kernel matrix containing similarities of test data with training data
          * Parameters:  testData:   BufferedDataTable containing the test data
          * Output:  nxm matrix containing the similarities of n test samples with m training samples
          */
         public RealMatrix kernelize(BufferedDataTable testData) {
-                return calculateKernelMatrix(m_trainingData, testData);
+                return calculateKernelMatrix(m_trainingData, readBufferedDataTable(testData));
         }
 
         public RealMatrix kernelize(double[][] testData) {
                 return calculateKernelMatrix(m_trainingData, testData);
+        }
+
+        public RealMatrix kernelize(double[][] trainingData, double[][] testData) {
+                return calculateKernelMatrix(trainingData, testData);
         }
 
         public int getNumTrainingSamples() {
@@ -104,7 +116,7 @@ public class KernelCalculator implements Externalizable {
                 return kernelMatrix;
         }
 
-        private static double[][] readBufferedDataTable(final BufferedDataTable table) {
+        public static double[][] readBufferedDataTable(final BufferedDataTable table) {
                 final double[][] data = new double[table.getRowCount()][table.getDataTableSpec().getNumColumns()];
 
                 final Iterator<DataRow> iterator = table.iterator();
