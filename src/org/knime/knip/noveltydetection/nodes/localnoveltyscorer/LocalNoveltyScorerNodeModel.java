@@ -87,6 +87,7 @@ import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
 import org.knime.knip.noveltydetection.knfst.alternative.KernelCalculator;
 import org.knime.knip.noveltydetection.knfst.alternative.KernelFunction;
 import org.knime.knip.noveltydetection.knfst.alternative.MultiClassKNFST;
+import org.knime.knip.noveltydetection.knfst.alternative.NoveltyScores;
 import org.knime.knip.noveltydetection.knfst.alternative.OneClassKNFST;
 import org.knime.knip.noveltydetection.knfst.alternative.RBFKernel;
 
@@ -317,7 +318,8 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
                         // Score test sample with local model
                         double normalizer = getMin(localModel.getBetweenClassDistances());
-                        double score = localModel.scoreTestData(localTestKernelMatrix)[0] / normalizer;
+                        NoveltyScores noveltyScore = localModel.scoreTestData(localTestKernelMatrix);
+                        double score = noveltyScore.getScores()[0] / normalizer;
 
                         // Write result into data table
                         DataCell[] cells = new DataCell[row.getNumCells() + 1];
