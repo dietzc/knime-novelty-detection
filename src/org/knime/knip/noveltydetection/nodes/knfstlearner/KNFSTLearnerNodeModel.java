@@ -200,21 +200,11 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
                         labels[l++] = label.getStringValue();
                 }
 
-                List<String> excludedColumns = m_columnSelection.getExcludeList();
                 List<String> includedColumns = m_columnSelection.getIncludeList();
                 DataTableSpec tableSpec = data.getDataTableSpec();
 
-                // Exclude incompatible columns
-                for (int c = 0; c < includedColumns.size(); c++) {
-                        if (!tableSpec.getColumnSpec(includedColumns.get(c)).getType().isCompatible(DoubleValue.class)) {
-                                excludedColumns.add(includedColumns.get(c));
-                        }
-                }
-
                 ColumnRearranger cr = new ColumnRearranger(tableSpec);
-
-                for (String col : excludedColumns)
-                        cr.remove(col);
+                cr.keepOnly(includedColumns.toArray(new String[includedColumns.size()]));
 
                 final BufferedDataTable training = exec.createColumnRearrangeTable(data, cr, exec);
 
@@ -269,6 +259,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
         protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
                 m_kernelFunctionModel.loadSettingsFrom(settings);
                 m_columnSelection.loadSettingsFrom(settings);
+                m_classColumn.loadSettingsFrom(settings);
         }
 
         /**
@@ -294,6 +285,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
         protected void saveSettingsTo(final NodeSettingsWO settings) {
                 m_kernelFunctionModel.saveSettingsTo(settings);
                 m_columnSelection.saveSettingsTo(settings);
+                m_classColumn.saveSettingsTo(settings);
         }
 
         /**
@@ -303,5 +295,6 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
         protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
                 m_kernelFunctionModel.validateSettings(settings);
                 m_columnSelection.validateSettings(settings);
+                m_classColumn.validateSettings(settings);
         }
 }

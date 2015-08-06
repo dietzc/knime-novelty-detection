@@ -97,7 +97,8 @@ public class KNFSTPortObject implements PortObject {
                         knfst = (KNFST) Class.forName(oi.readUTF()).newInstance();
                         knfst.readExternal(oi);
                         compatibleFeatures = (List<String>) Class.forName(oi.readUTF()).newInstance();
-                        for (int i = 0; i < oi.readInt(); i++)
+                        int size = oi.readInt();
+                        for (int i = 0; i < size; i++)
                                 compatibleFeatures.add(oi.readUTF());
                 } catch (IOException ioe) {
 

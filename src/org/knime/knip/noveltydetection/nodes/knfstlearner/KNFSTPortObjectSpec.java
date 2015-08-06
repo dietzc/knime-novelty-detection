@@ -86,7 +86,8 @@ public class KNFSTPortObjectSpec implements PortObjectSpec {
                         assert zentry.getName().equals("compatibleFeatures.objectout");
                         oi = new ObjectInputStream(new NonClosableInputStream.Zip(in));
                         compatibleFeatures = (List<String>) Class.forName(oi.readUTF()).newInstance();
-                        for (int i = 0; i < oi.readInt(); i++)
+                        int size = oi.readInt();
+                        for (int i = 0; i < size; i++)
                                 compatibleFeatures.add(oi.readUTF());
 
                 } catch (IOException ioe) {

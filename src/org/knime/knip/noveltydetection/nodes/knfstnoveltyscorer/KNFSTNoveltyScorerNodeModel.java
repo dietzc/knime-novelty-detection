@@ -121,7 +121,7 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
         private BufferedDataTable m_data;
 
         /**
-         * Constructor SegementCropperNodeModel
+         * Constructor KNFSTNoveltyScorerNodeModel
          */
         public KNFSTNoveltyScorerNodeModel() {
                 super(new PortType[] {KNFSTPortObject.TYPE, BufferedDataTable.TYPE}, new PortType[] {BufferedDataTable.TYPE});
@@ -169,17 +169,10 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 final KNFSTPortObjectSpec knfstSpec = (KNFSTPortObjectSpec) ((KNFSTPortObject) inData[0]).getSpec();
                 List<String> includedFeatures = knfstSpec.getCompatibleFeatures();
 
+                // Only use columns that are needed for testing
                 final ColumnRearranger cr = new ColumnRearranger(tableSpec);
-
-                for (DataColumnSpec colSpec : tableSpec) {
-                        if (!includedFeatures.contains(colSpec.getName())) {
-                                cr.remove(colSpec.getName());
-                        }
-                }
-
-                //final BufferedDataTable testData = exec.createColumnRearrangeTable(data, cr, exec);
-
-                final BufferedDataTable testData = data;
+                cr.keepOnly(includedFeatures.toArray(new String[includedFeatures.size()]));
+                final BufferedDataTable testData = exec.createColumnRearrangeTable(data, cr, exec);
 
                 NoveltyScores noveltyScores = knfst.scoreTestData(testData);
 
@@ -254,7 +247,8 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
          */
         @Override
         protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
-
+                m_appendNoveltyScore.loadSettingsFrom(settings);
+                m_appendNullspaceCoordinates.loadSettingsFrom(settings);
         }
 
         /**
@@ -278,7 +272,8 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
          */
         @Override
         protected void saveSettingsTo(final NodeSettingsWO settings) {
-
+                m_appendNoveltyScore.saveSettingsTo(settings);
+                m_appendNullspaceCoordinates.saveSettingsTo(settings);
         }
 
         /**
@@ -294,7 +289,8 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
          */
         @Override
         protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-
+                m_appendNoveltyScore.validateSettings(settings);
+                m_appendNullspaceCoordinates.validateSettings(settings);
         }
 
         /****************** Private helper methods *************************************************/
