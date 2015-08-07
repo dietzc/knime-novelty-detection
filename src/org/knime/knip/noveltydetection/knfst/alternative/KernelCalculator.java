@@ -52,7 +52,7 @@ public class KernelCalculator implements Externalizable {
         }
 
         public RealMatrix kernelize(BufferedDataTable trainingData, BufferedDataTable testData) {
-                return calculateKernelMatrix(trainingData, testData);
+                return calculateKernelMatrix(readBufferedDataTable(trainingData), readBufferedDataTable(testData));
         }
 
         /* Returns kernel matrix containing similarities of test data with training data
@@ -121,13 +121,32 @@ public class KernelCalculator implements Externalizable {
         }
 
         private RealMatrix calculateKernelMatrix(double[][] training, double[][] test) {
-                final double[][] kernelMatrixData = new double[training.length][test.length];
-                for (int r1 = 0; r1 < training.length; r1++) {
-                        for (int r2 = 0; r2 < test.length; r2++) {
-                                kernelMatrixData[r1][r2] = m_kernelFunction.calculate(training[r1], test[r2]);
+                double[][] result = new double[training.length][test.length];
+                // determine number of cores
+                int numCores = Runtime.getRuntime().availableProcessors();
+
+                // start threads
+                KernelCalculationThread[] threads = new KernelCalculationThread[numCores];
+                int colsPerThread = test.length / numCores;
+                for (int t = 0; t < numCores; t++) {
+                        int min = t * colsPerThread;
+                        int max = (t == numCores - 1) ? test.length : (t + 1) * colsPerThread;
+                        threads[t] = new KernelCalculationThread(Integer.toString(t), m_kernelFunction, training, test, result, min, max);
+                        threads[t].start();
+                }
+
+                // wait for threads to finish
+                for (int t = 0; t < threads.length; t++) {
+                        try {
+                                threads[t].join();
+                        } catch (InterruptedException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
                         }
                 }
-                return MatrixUtils.createRealMatrix(kernelMatrixData);
+
+                // assemble and return KernelMatrix
+                return MatrixUtils.createRealMatrix(result);
         }
 
         private RealMatrix calculateKernelMatrix(double[][] training, BufferedDataTable test) {
