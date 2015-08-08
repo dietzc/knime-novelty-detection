@@ -34,8 +34,10 @@ public class Test {
                 KNFST multiclass = new MultiClassKNFST(kernelCalc, labelsTraining);
 
                 double[][] test = { {123, 245, 12}, {3455, 33, 90}};
-                double[] scoreOneclass = oneclass.scoreTestData(test);
-                double[] scoreMulticlass = multiclass.scoreTestData(test);
+                NoveltyScores novScoresOneClass = oneclass.scoreTestData(test);
+                NoveltyScores novScoresMultiClass = multiclass.scoreTestData(test);
+                double[] scoreOneclass = novScoresOneClass.getScores();
+                double[] scoreMulticlass = novScoresMultiClass.getScores();
 
                 for (int i = 0; i < scoreOneclass.length; i++) {
                         System.out.println("Test sample " + i + ":");
