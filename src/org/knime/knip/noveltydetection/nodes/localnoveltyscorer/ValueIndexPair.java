@@ -38,13 +38,13 @@ public class ValueIndexPair {
                         throw new IllegalArgumentException("k must be smaller or equal to the length of the array!");
                 }
 
-                PriorityQueue<ValueIndexPair> heap = new PriorityQueue<ValueIndexPair>(comparator);
+                PriorityQueue<ValueIndexPair> heap = new PriorityQueue<ValueIndexPair>(k, comparator);
 
                 for (int i = 0; i < array.length; i++) {
                         if (i < k) {
                                 heap.add(array[i]);
                         } else {
-                                if (array[i].getValue() < heap.peek().getValue()) {
+                                if (comparator.compare(array[i], heap.peek()) == 1) {
                                         heap.poll();
                                         heap.add(array[i]);
                                 }

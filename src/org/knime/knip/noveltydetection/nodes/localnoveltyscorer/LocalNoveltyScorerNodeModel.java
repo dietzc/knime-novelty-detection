@@ -240,7 +240,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 KernelCalculator kernelCalculator = new KernelCalculator(trainingData, kernelFunction);
 
                 // Get global KernelMatrix
-                RealMatrix globalKernelMatrix = kernelCalculator.kernelize(testData);
+                RealMatrix globalKernelMatrix = kernelCalculator.kernelize(trainingData, testData);
 
                 // Calculate distance Matrix
                 /*
@@ -258,16 +258,15 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 */
 
                 // Calculate Local model for each row in the test table
-                int colIterator = 0;
                 int currentRowIdx = 0;
                 final int rowCount = testIn.getRowCount();
                 for (DataRow row : testIn) {
                         // Find k nearest neighbors
-                        ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(globalKernelMatrix.getColumn(colIterator));
+                        ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(globalKernelMatrix.getColumn(currentRowIdx));
                         Comparator<ValueIndexPair> comparator = new Comparator<ValueIndexPair>() {
                                 public int compare(ValueIndexPair o1, ValueIndexPair o2) {
                                         // TODO Auto-generated method stub
-                                        return (o1.getValue() < o2.getValue()) ? 1 : ((o1.getValue() == o2.getValue()) ? 0 : -1);
+                                        return (o1.getValue() < o2.getValue()) ? -1 : ((o1.getValue() == o2.getValue()) ? 0 : 1);
                                 }
                         };
                         ValueIndexPair[] neighbors = ValueIndexPair.getK(distances, numberOfNeighbors, comparator);

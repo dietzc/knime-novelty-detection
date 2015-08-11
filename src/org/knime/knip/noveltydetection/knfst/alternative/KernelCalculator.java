@@ -120,7 +120,7 @@ public class KernelCalculator implements Externalizable {
                 return kernelMatrix;
         }
 
-        private RealMatrix calculateKernelMatrix(double[][] training, double[][] test) {
+        public RealMatrix calculateKernelMatrix(double[][] training, double[][] test) {
                 double[][] result = new double[training.length][test.length];
                 // determine number of cores
                 int numCores = Runtime.getRuntime().availableProcessors();
@@ -146,6 +146,18 @@ public class KernelCalculator implements Externalizable {
                 }
 
                 // assemble and return KernelMatrix
+                return MatrixUtils.createRealMatrix(result);
+        }
+
+        public RealMatrix calculateKernelMatrix_singleThread(double[][] training, double[][] test) {
+                double[][] result = new double[training.length][test.length];
+
+                for (int s1 = 0; s1 < training.length; s1++) {
+                        for (int s2 = 0; s2 < test.length; s2++) {
+                                result[s1][s2] = m_kernelFunction.calculate(training[s1], test[s2]);
+                        }
+                }
+
                 return MatrixUtils.createRealMatrix(result);
         }
 
