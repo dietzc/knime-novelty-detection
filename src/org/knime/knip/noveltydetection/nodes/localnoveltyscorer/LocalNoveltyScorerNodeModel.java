@@ -242,6 +242,9 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 // Get global KernelMatrix
                 RealMatrix globalKernelMatrix = kernelCalculator.kernelize(trainingData, testData);
 
+                // Get training KernelMatrix
+                RealMatrix trainingKernelMatrix = kernelCalculator.kernelize(trainingData, trainingData);
+
                 // Calculate distance Matrix
                 /*
                 final RealMatrix distanceMatrix = globalKernelMatrix.createMatrix(globalKernelMatrix.getRowDimension(),
@@ -280,12 +283,12 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                         });
 
                         // Get local training data and labels, also check if this is a one class problem
-                        double[][] localTrainingData = new double[numberOfNeighbors][trainingData[0].length];
+                        int[] localTrainingDataIndices = new int[numberOfNeighbors];
                         String[] localLabels = new String[numberOfNeighbors];
                         boolean oneClass = true;
                         String currentLabel = labels[neighbors[0].getIndex()];
                         for (int i = 0; i < numberOfNeighbors; i++) {
-                                localTrainingData[i] = trainingData[neighbors[i].getIndex()];
+                                localTrainingDataIndices[i] = neighbors[i].getIndex();
                                 String label = labels[neighbors[i].getIndex()];
                                 if (!label.equals(currentLabel)) {
                                         oneClass = false;
@@ -294,7 +297,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                         }
 
                         // Calculate local kernel Matrix for training
-                        RealMatrix localTrainingKernelMatrix = kernelCalculator.kernelize(localTrainingData, localTrainingData);
+                        RealMatrix localTrainingKernelMatrix = trainingKernelMatrix.getSubMatrix(localTrainingDataIndices, localTrainingDataIndices);
 
                         // Create KNFST model
                         KNFST localModel = null;
@@ -309,9 +312,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                         }
 
                         // Get local kernel matrix for testing from global kernel matrix
+
                         double[] localTestKernelMatrixData = new double[numberOfNeighbors];
                         for (int i = 0; i < numberOfNeighbors; i++) {
-                                localTestKernelMatrixData[i] = globalKernelMatrix.getEntry(neighbors[i].getIndex(), currentRowIdx);
+                                localTestKernelMatrixData[i] = neighbors[i].getValue();
                         }
                         RealMatrix localTestKernelMatrix = MatrixUtils.createColumnRealMatrix(localTestKernelMatrixData);
 
