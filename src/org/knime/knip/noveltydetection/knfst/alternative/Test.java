@@ -1,5 +1,6 @@
 package org.knime.knip.noveltydetection.knfst.alternative;
 
+import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 
 public class Test {
@@ -86,7 +87,11 @@ public class Test {
                                 printMatrix(projectionVector);
                 */
 
-                test_parallelKernelCalculation();
+                double[][] elements = { {1, 2, 3, 4}, {1, 2, 3, 4}, {1, 2, 3, 4}, {1, 2, 3, 4}};
+                RealMatrix matrix = MatrixUtils.createRealMatrix(elements);
+
+                printMatrix(matrix);
+                printMatrix(matrix.getSubMatrix(new int[] {0, 2}, new int[] {1, 3}));
         }
 
         public static void printMatrix(RealMatrix matrix) {
