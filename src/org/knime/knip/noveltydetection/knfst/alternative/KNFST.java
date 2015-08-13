@@ -257,4 +257,12 @@ public abstract class KNFST implements Externalizable {
         public RealMatrix getProjection() {
                 return m_projection;
         }
+
+        public double[][] getTargetPoints() {
+                return m_targetPoints.getData();
+        }
+
+        public int getNullspaceDimension() {
+                return m_targetPoints.getColumnDimension();
+        }
 }

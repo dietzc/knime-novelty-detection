@@ -76,6 +76,7 @@ public class KNFSTPortObjectSpec implements PortObjectSpec {
 
         }
 
+        @SuppressWarnings("unchecked")
         private static KNFSTPortObjectSpec load(PortObjectSpecZipInputStream in) {
                 ObjectInputStream oi = null;
                 List<String> compatibleFeatures = null;

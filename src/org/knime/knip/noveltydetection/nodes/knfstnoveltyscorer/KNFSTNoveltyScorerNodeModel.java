@@ -49,6 +49,7 @@
 package org.knime.knip.noveltydetection.nodes.knfstnoveltyscorer;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
@@ -133,7 +134,7 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
         @Override
         protected DataTableSpec[] configure(final PortObjectSpec[] inSpecs) throws InvalidSettingsException {
                 // TODO check inspec for img value column
-
+                /*
                 m_inTableSpec = (DataTableSpec) inSpecs[1];
                 KNFSTPortObjectSpec knfstSpec = (KNFSTPortObjectSpec) inSpecs[0];
                 List<String> compatibleFeatures = knfstSpec.getCompatibleFeatures();
@@ -144,10 +145,13 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                                                 "The input table does not contain the necessary columns needed by the KNFST model.");
                 }
 
-                return createOutSpec(m_inTableSpec);
+                return createOutSpec(m_inTableSpec, knfstSpec);
+                */
+                return new DataTableSpec[] {null};
         }
 
-        private DataTableSpec[] createOutSpec(final DataTableSpec inTableSpec) {
+        private DataTableSpec[] createOutSpec(final DataTableSpec inTableSpec, final KNFSTPortObjectSpec knfstSpec) {
+
                 DataColumnSpec scoreSpec = new DataColumnSpecCreator("Novelty Score", DoubleCell.TYPE).createSpec();
 
                 return new DataTableSpec[] {new DataTableSpec(inTableSpec, new DataTableSpec(scoreSpec))};
@@ -159,8 +163,6 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
         @Override
         @SuppressWarnings({"unchecked"})
         protected BufferedDataTable[] execute(final PortObject[] inData, final ExecutionContext exec) throws Exception {
-
-                final BufferedDataContainer container = exec.createDataContainer(createOutSpec(m_inTableSpec)[0]);
 
                 final KNFST knfst = ((KNFSTPortObject) inData[0]).getKNFST();
                 final BufferedDataTable data = (BufferedDataTable) inData[1];
@@ -178,8 +180,11 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
                 int additionalCells = 0;
 
+                ArrayList<DataColumnSpec> outColSpecs = new ArrayList<DataColumnSpec>();
+
                 double[] scores = null;
                 if (m_appendNoveltyScore.getBooleanValue()) {
+                        outColSpecs.add(new DataColumnSpecCreator("Novelty Score", DoubleCell.TYPE).createSpec());
                         scores = noveltyScores.getScores();
                         // add options for different normalizations
                         double normalizer = getMin(knfst.getBetweenClassDistances());
@@ -195,7 +200,13 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 if (m_appendNullspaceCoordinates.getBooleanValue()) {
                         nullspaceCoordinates = noveltyScores.getCoordinates();
                         additionalCells += nullspaceCoordinates.getColumnDimension();
+                        for (int d = 0; d < nullspaceCoordinates.getColumnDimension(); d++) {
+                                outColSpecs.add(new DataColumnSpecCreator("Dim" + d, DoubleCell.TYPE).createSpec());
+                        }
                 }
+
+                final BufferedDataContainer container = exec.createDataContainer(new DataTableSpec(tableSpec, new DataTableSpec(outColSpecs
+                                .toArray(new DataColumnSpec[outColSpecs.size()]))));
 
                 int scoreIterator = 0;
 
@@ -212,7 +223,7 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
                         if (m_appendNullspaceCoordinates.getBooleanValue()) {
 
-                                for (int i = 0; i < nullspaceCoordinates.getColumnDimension(); c++) {
+                                for (int i = 0; i < nullspaceCoordinates.getColumnDimension(); i++) {
                                         cells[c + i] = new DoubleCell(nullspaceCoordinates.getRow(scoreIterator)[i]);
                                 }
                         }

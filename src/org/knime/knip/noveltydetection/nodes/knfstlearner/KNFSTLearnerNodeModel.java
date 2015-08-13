@@ -49,18 +49,28 @@
 package org.knime.knip.noveltydetection.nodes.knfstlearner;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
 
+import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
+import org.knime.core.data.DataColumnSpecCreator;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.DoubleValue;
 import org.knime.core.data.NominalValue;
+import org.knime.core.data.RowKey;
 import org.knime.core.data.StringValue;
 import org.knime.core.data.container.ColumnRearranger;
+import org.knime.core.data.def.DefaultRow;
+import org.knime.core.data.def.DoubleCell;
+import org.knime.core.data.def.StringCell;
+import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.ExecutionContext;
 import org.knime.core.node.ExecutionMonitor;
@@ -129,7 +139,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
          * Constructor SegementCropperNodeModel
          */
         public KNFSTLearnerNodeModel() {
-                super(new PortType[] {BufferedDataTable.TYPE}, new PortType[] {KNFSTPortObject.TYPE});
+                super(new PortType[] {BufferedDataTable.TYPE}, new PortType[] {KNFSTPortObject.TYPE, BufferedDataTable.TYPE});
         }
 
         /**
@@ -172,7 +182,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
                 }
                 m_compatibleFeatures = compatibleFeatures;
 
-                return new PortObjectSpec[] {new KNFSTPortObjectSpec(compatibleFeatures)};
+                return new PortObjectSpec[] {new KNFSTPortObjectSpec(compatibleFeatures), null};
         }
 
         /**
@@ -241,7 +251,36 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T
 
                 m_knfstPortObject = new KNFSTPortObject(knfst, m_compatibleFeatures);
 
-                return new PortObject[] {m_knfstPortObject};
+                // Write target points into table
+                String[] uniqueLabels = new HashSet<String>(Arrays.asList(labels)).toArray(new String[0]);
+                Arrays.sort(uniqueLabels, new Comparator<String>() {
+                        public int compare(String s1, String s2) {
+                                return s1.compareTo(s2);
+                        }
+                });
+                double[][] targetPoints = knfst.getTargetPoints();
+                DataColumnSpec[] colSpecs = new DataColumnSpec[targetPoints[0].length + 1];
+                for (int i = 0; i < colSpecs.length; i++) {
+                        if (i < colSpecs.length - 1) {
+                                colSpecs[i] = new DataColumnSpecCreator("Dim" + i, DoubleCell.TYPE).createSpec();
+                        } else {
+                                colSpecs[i] = new DataColumnSpecCreator("Class", StringCell.TYPE).createSpec();
+                        }
+                }
+
+                final DataTableSpec spec = new DataTableSpec(colSpecs);
+                final BufferedDataContainer container = exec.createDataContainer(spec);
+                for (int r = 0; r < targetPoints.length; r++) {
+                        DataCell[] cells = new DataCell[targetPoints[r].length + 1];
+                        for (int d = 0; d < targetPoints[r].length; d++) {
+                                cells[d] = new DoubleCell(targetPoints[r][d]);
+                        }
+                        cells[cells.length - 1] = new StringCell(uniqueLabels[r]);
+                        container.addRowToTable(new DefaultRow(new RowKey("tar_" + r), cells));
+                }
+                container.close();
+
+                return new PortObject[] {m_knfstPortObject, container.getTable()};
         }
 
         /**
