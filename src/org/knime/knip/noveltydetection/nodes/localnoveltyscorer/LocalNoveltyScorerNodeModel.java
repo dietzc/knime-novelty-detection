@@ -243,115 +243,23 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 // Get training KernelMatrix
                 RealMatrix trainingKernelMatrix = kernelCalculator.kernelize(trainingData, trainingData);
 
-                // Calculate distance Matrix
-                /*
-                final RealMatrix distanceMatrix = globalKernelMatrix.createMatrix(globalKernelMatrix.getRowDimension(),
-                                globalKernelMatrix.getColumnDimension());
-                for (int r = 0; r < globalKernelMatrix.getRowDimension(); r++) {
-                        for (int c = 0; c < globalKernelMatrix.getColumnDimension(); c++) {
-                                double[] training = trainingData[r];
-                                double[] test = testData[c];
-                                double distance = kernelFunction.calculate(test, test) + kernelFunction.calculate(training, training) - 2
-                                                * globalKernelMatrix.getEntry(r, c);
-                                distanceMatrix.setEntry(r, c, distance);
-                        }
-                }
-                */
-
                 // Calculate Local model for each row in the test table
                 int currentRowIdx = 0;
                 final int rowCount = testIn.getRowCount();
                 for (DataRow row : testIn) {
-                        /*
-                        // Find k nearest neighbors
-                        ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(globalKernelMatrix.getColumn(currentRowIdx));
-                        Comparator<ValueIndexPair> comparator = new Comparator<ValueIndexPair>() {
-                                public int compare(ValueIndexPair o1, ValueIndexPair o2) {
-                                        // TODO Auto-generated method stub
-                                        return (o1.getValue() < o2.getValue()) ? 1 : ((o1.getValue() == o2.getValue()) ? 0 : -1);
-                                }
-                        };
-
-                        Arrays.sort(distances, comparator);
-                        ValueIndexPair[] neighbors = new ValueIndexPair[numberOfNeighbors];
-                        for (int i = 0; i < neighbors.length; i++) {
-                                neighbors[i] = distances[i];
-                        }
-                        /*
-                        ValueIndexPair[] neighbors = ValueIndexPair.getK(distances, numberOfNeighbors, comparator);
-                        
-
-                        // Sort neighbors according to class
-                        // NOTE: Ordering by index accomplishes that because the samples were ordered in the input table
-                        Arrays.sort(neighbors, new Comparator<ValueIndexPair>() {
-                                public int compare(ValueIndexPair o1, ValueIndexPair o2) {
-                                        return o1.getIndex() - o2.getIndex();
-                                }
-                        });
-
-                        // Get local training data and labels, also check if this is a one class problem
-                        int[] localTrainingDataIndices = new int[numberOfNeighbors];
-                        String[] localLabels = new String[numberOfNeighbors];
-                        boolean oneClass = true;
-                        String currentLabel = labels[neighbors[0].getIndex()];
-                        for (int i = 0; i < numberOfNeighbors; i++) {
-                                localTrainingDataIndices[i] = neighbors[i].getIndex();
-                                String label = labels[neighbors[i].getIndex()];
-                                if (!label.equals(currentLabel)) {
-                                        oneClass = false;
-                                }
-                                localLabels[i] = label;
-                        }
-
-                        // Calculate local kernel Matrix for training
-                        RealMatrix localTrainingKernelMatrix = trainingKernelMatrix.getSubMatrix(localTrainingDataIndices, localTrainingDataIndices);
-
-                        // Create KNFST model
-                        KNFST localModel = null;
-
-                        // Handle one class
-                        if (oneClass) {
-                                localModel = new OneClassKNFST(localTrainingKernelMatrix);
-
-                                // Handle multiple classes  
-                        } else {
-                                localModel = new MultiClassKNFST(localTrainingKernelMatrix, localLabels);
-                        }
-
-                        // Get local kernel matrix for testing from global kernel matrix
-
-                        double[] localTestKernelMatrixData = new double[numberOfNeighbors];
-                        for (int i = 0; i < numberOfNeighbors; i++) {
-                                localTestKernelMatrixData[i] = neighbors[i].getValue();
-                        }
-                        RealMatrix localTestKernelMatrix = MatrixUtils.createColumnRealMatrix(localTestKernelMatrixData);
-
-                        // Score test sample with local model
-                        double normalizer = getMin(localModel.getBetweenClassDistances());
-                        NoveltyScores noveltyScore = localModel.scoreTestData(localTestKernelMatrix);
-                        double score = noveltyScore.getScores()[0] / normalizer;
-                        */
-
-                        // Write result into data table
-
-                        double[] dist = new double[globalKernelMatrix.getRowDimension()];
-                        double ownDist = kernelFunction.calculate(testData[currentRowIdx], testData[currentRowIdx]);
-                        for (int r = 0; r < dist.length; r++) {
-                                dist[r] = trainingKernelMatrix.getEntry(r, r) + ownDist - 2 * globalKernelMatrix.getEntry(r, currentRowIdx);
-                        }
 
                         // Sort training samples according to distance to current sample in kernel feature space
 
-                        ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(dist);
+                        ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(globalKernelMatrix.getColumn(currentRowIdx));
                         Arrays.sort(distances, new Comparator<ValueIndexPair>() {
                                 public int compare(ValueIndexPair o1, ValueIndexPair o2) {
                                         double v1 = o1.getValue();
                                         double v2 = o2.getValue();
                                         int res = 0;
                                         if (v1 < v2)
-                                                res = -1;
-                                        if (v1 > v2)
                                                 res = 1;
+                                        if (v1 > v2)
+                                                res = -1;
                                         return res;
                                 }
                         });
@@ -363,6 +271,8 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                         }
 
                         // Sort neighbors according to class
+                        // NOTE: Since the instances are ordered by class in the original table
+                        //      sorting by indices is equivalent
                         Arrays.sort(neighbors, new Comparator<ValueIndexPair>() {
                                 public int compare(ValueIndexPair o1, ValueIndexPair o2) {
                                         int res = o1.getIndex() - o2.getIndex();

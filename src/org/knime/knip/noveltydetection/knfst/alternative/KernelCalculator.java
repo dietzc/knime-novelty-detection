@@ -69,32 +69,7 @@ public class KernelCalculator implements Externalizable {
 
         public RealMatrix kernelize(double[][] trainingData, double[][] testData) {
 
-                double[][] result = new double[trainingData.length][testData.length];
-                // determine number of cores
-                int numCores = Runtime.getRuntime().availableProcessors();
-
-                // start threads
-                KernelCalculationThread[] threads = new KernelCalculationThread[numCores];
-                int colsPerThread = testData.length / numCores;
-                for (int t = 0; t < numCores; t++) {
-                        int min = t * colsPerThread;
-                        int max = (t == numCores - 1) ? testData.length : (t + 1) * colsPerThread - 1;
-                        threads[t] = new KernelCalculationThread(Integer.toString(t), m_kernelFunction, trainingData, testData, result, min, max);
-                        threads[t].start();
-                }
-
-                // wait for threads to finish
-                for (int t = 0; t < threads.length; t++) {
-                        try {
-                                threads[t].join();
-                        } catch (InterruptedException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                        }
-                }
-
-                // assemble and return KernelMatrix
-                return MatrixUtils.createRealMatrix(result);
+                return calculateKernelMatrix(trainingData, testData);
         }
 
         public int getNumTrainingSamples() {
