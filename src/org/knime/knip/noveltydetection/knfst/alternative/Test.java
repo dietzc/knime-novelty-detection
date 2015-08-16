@@ -89,9 +89,6 @@ public class Test {
 
                 double[][] elements = { {1, 2, 3, 4}, {1, 2, 3, 4}, {1, 2, 3, 4}, {1, 2, 3, 4}};
                 RealMatrix matrix = MatrixUtils.createRealMatrix(elements);
-
-                printMatrix(matrix);
-                printMatrix(matrix.getSubMatrix(new int[] {0, 2}, new int[] {1, 3}));
         }
 
         public static void printMatrix(RealMatrix matrix) {
@@ -103,5 +100,20 @@ public class Test {
                         String end = (r == matrix.getRowDimension() - 1) ? ")\n" : "\n";
                         System.out.println(end);
                 }
+        }
+
+        public static boolean matricesAreEqual(RealMatrix matrix1, RealMatrix matrix2) {
+                if (matrix1.getRowDimension() != matrix2.getRowDimension() || matrix1.getColumnDimension() != matrix2.getColumnDimension()) {
+                        return false;
+                }
+
+                for (int r = 0; r < matrix1.getRowDimension(); r++) {
+                        for (int c = 0; c < matrix1.getColumnDimension(); c++) {
+                                if (Math.abs(matrix1.getEntry(r, c) - matrix2.getEntry(r, c)) > 1e-12) {
+                                        return false;
+                                }
+                        }
+                }
+                return true;
         }
 }
