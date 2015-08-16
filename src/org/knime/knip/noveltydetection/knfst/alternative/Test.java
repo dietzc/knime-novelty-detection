@@ -5,6 +5,26 @@ import org.apache.commons.math3.linear.RealMatrix;
 
 public class Test {
 
+        static void test_parallelKernelCalculation() {
+                double[][] training = new double[100][100];
+                double[][] test = new double[100][100];
+
+                for (int r = 0; r < training.length; r++) {
+                        for (int c = 0; c < training.length; c++) {
+                                training[r][c] = Math.random();
+                                test[r][c] = Math.random();
+                        }
+                }
+
+                KernelCalculator kernelCalculator = new KernelCalculator(new HIKKernel());
+
+                RealMatrix multithread = kernelCalculator.calculateKernelMatrix(training, test);
+                RealMatrix singlethread = kernelCalculator.calculateKernelMatrix_singleThread(training, test);
+
+                boolean equal = multithread.equals(singlethread);
+                System.out.println(equal);
+        }
+
         public static void main(String[] args) {
                 /*
                 double[] elements = {1, 1, 1, 2, 2, 2, 3, 3, 3};
@@ -14,7 +34,7 @@ public class Test {
                 printMatrix(svd[0]);
                 printMatrix(svd[1]);
                 printMatrix(svd[2]);
-                */
+                
 
                 double[][] elements = { {2, 3, 3, 4, 6, 8, 8, 10, 10}, {3, 5, 4, 6, 9, 10, 9, 13, 12}, {3, 4, 5, 6, 9, 14, 15, 17, 18},
                                 {4, 6, 6, 8, 12, 16, 16, 20, 20}, {6, 8, 9, 12, 18, 24, 24, 30, 30}, {8, 10, 14, 16, 24, 40, 44, 48, 52},
@@ -66,6 +86,9 @@ public class Test {
                                 System.out.println("Projection of test sample:");
                                 printMatrix(projectionVector);
                 */
+
+                double[][] elements = { {1, 2, 3, 4}, {1, 2, 3, 4}, {1, 2, 3, 4}, {1, 2, 3, 4}};
+                RealMatrix matrix = MatrixUtils.createRealMatrix(elements);
         }
 
         public static void printMatrix(RealMatrix matrix) {
@@ -77,5 +100,20 @@ public class Test {
                         String end = (r == matrix.getRowDimension() - 1) ? ")\n" : "\n";
                         System.out.println(end);
                 }
+        }
+
+        public static boolean matricesAreEqual(RealMatrix matrix1, RealMatrix matrix2) {
+                if (matrix1.getRowDimension() != matrix2.getRowDimension() || matrix1.getColumnDimension() != matrix2.getColumnDimension()) {
+                        return false;
+                }
+
+                for (int r = 0; r < matrix1.getRowDimension(); r++) {
+                        for (int c = 0; c < matrix1.getColumnDimension(); c++) {
+                                if (Math.abs(matrix1.getEntry(r, c) - matrix2.getEntry(r, c)) > 1e-12) {
+                                        return false;
+                                }
+                        }
+                }
+                return true;
         }
 }
