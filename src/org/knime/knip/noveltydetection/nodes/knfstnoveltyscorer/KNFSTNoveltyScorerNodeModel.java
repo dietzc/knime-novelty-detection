@@ -147,10 +147,20 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
                 return createOutSpec(m_inTableSpec, knfstSpec);
                 */
-                return new DataTableSpec[] {null};
+                boolean appendNoveltyScore = m_appendNoveltyScore.getBooleanValue();
+                boolean appendNullspaceCoordinates = m_appendNullspaceCoordinates.getBooleanValue();
+
+                if (appendNullspaceCoordinates) {
+                        return new DataTableSpec[] {null};
+                } else if (appendNoveltyScore) {
+                        return createOutSpec((DataTableSpec) inSpecs[1]);
+                } else {
+                        throw new InvalidSettingsException("Select at least one option.");
+                }
+
         }
 
-        private DataTableSpec[] createOutSpec(final DataTableSpec inTableSpec, final KNFSTPortObjectSpec knfstSpec) {
+        private DataTableSpec[] createOutSpec(final DataTableSpec inTableSpec) {
 
                 DataColumnSpec scoreSpec = new DataColumnSpecCreator("Novelty Score", DoubleCell.TYPE).createSpec();
 
