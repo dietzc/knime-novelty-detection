@@ -8,7 +8,8 @@
 		<intro>
 			Calculates a Kernel Null Foley-Sammon Transformation that
 			can be used to calculate a novelty score for a test sample in
-			relation to the training samples. 
+			relation to the training samples.
+			IMPORTANT NOTE: The input table must be sorted by class.
 
 		</intro>
 		<tab name="Options">
@@ -32,6 +33,6 @@
 		<inPort index="0" name="Training data"> Training data
 		</inPort>
 		<outPort index="0" name="KNFST-model">KNFST-model</outPort>
-		<outPort name="1" index="Target points">Target points</outPort>
+		<outPort index="1" name="Target points">Target points</outPort>
 	</ports>
 </knimeNode>
