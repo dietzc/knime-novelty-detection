@@ -12,21 +12,21 @@ public class EXPHIKKernel implements KernelFunction {
         public double calculate(final DataRow sample1, final DataRow sample2) {
                 final HIKKernel hik = new HIKKernel();
 
-                return Math.exp(hik.calculate(sample1, sample2) - hik.calculate(sample1, sample1) - hik.calculate(sample2, sample2));
+                return Math.exp(2 * hik.calculate(sample1, sample2) - hik.calculate(sample1, sample1) - hik.calculate(sample2, sample2));
         }
 
         @Override
         public double calculate(final double[] sample1, final DataRow sample2) {
                 final HIKKernel hik = new HIKKernel();
 
-                return Math.exp(hik.calculate(sample1, sample2) - hik.calculate(sample1, sample1) - hik.calculate(sample2, sample2));
+                return Math.exp(2 * hik.calculate(sample1, sample2) - hik.calculate(sample1, sample1) - hik.calculate(sample2, sample2));
         }
 
         @Override
         public double calculate(final double[] sample1, final double[] sample2) {
                 final HIKKernel hik = new HIKKernel();
 
-                return Math.exp(hik.calculate(sample1, sample2) - hik.calculate(sample1, sample1) - hik.calculate(sample2, sample2));
+                return Math.exp(2 * hik.calculate(sample1, sample2) - hik.calculate(sample1, sample1) - hik.calculate(sample2, sample2));
         }
 
         @Override

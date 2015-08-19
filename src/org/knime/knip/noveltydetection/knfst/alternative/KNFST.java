@@ -55,9 +55,8 @@ public abstract class KNFST implements Externalizable {
                 RealMatrix matrixM = MatrixFunctions.ones(kernelMatrix.getColumnDimension(), kernelMatrix.getColumnDimension()).scalarMultiply(
                                 1 / kernelMatrix.getColumnDimension());
                 RealMatrix matrixImM = matrixI.subtract(matrixM);
-                final RealMatrix centeredK1 = (matrixImM.transpose()).multiply(kernelMatrix).multiply(matrixImM);
-                System.out.println(Test.matricesAreEqual(centeredK1, centeredK));
-                 */
+                final RealMatrix centeredK = (matrixImM.transpose()).multiply(kernelMatrix).multiply(matrixImM);
+                */
 
                 /*
                 EigenDecomposition eig = new EigenDecomposition(centeredK);
