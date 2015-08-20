@@ -202,6 +202,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 List<String> includedCols = m_columnSelection.getIncludeList();
                 int numberOfNeighbors = m_numberOfNeighborsModel.getIntValue();
 
+                if (numberOfNeighbors > trainingIn.getRowCount()) {
+                        numberOfNeighbors = trainingIn.getRowCount();
+                }
+
                 trainingRearranger.keepOnly(includedCols.toArray(new String[includedCols.size()]));
                 testRearranger.keepOnly(includedCols.toArray(new String[includedCols.size()]));
 
