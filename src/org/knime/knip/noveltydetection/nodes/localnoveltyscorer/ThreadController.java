@@ -1,8 +1,10 @@
 package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 
 import org.apache.commons.math3.linear.RealMatrix;
+import org.knime.core.node.ExecutionContext;
 
 public class ThreadController {
+        private ExecutionContext m_exec;
         private RealMatrix m_globalKernelMatrix;
         private RealMatrix m_trainingKernelMatrix;
         private String[] m_labels;
@@ -10,8 +12,9 @@ public class ThreadController {
         private double[] m_noveltyScores;
         private int m_currentIndex;
 
-        public ThreadController(final RealMatrix globalKernelMatrix, final RealMatrix trainingKernelMatrix, final String[] labels,
-                        final int numNeighbors) {
+        public ThreadController(final ExecutionContext exec, final RealMatrix globalKernelMatrix, final RealMatrix trainingKernelMatrix,
+                        final String[] labels, final int numNeighbors) {
+                m_exec = exec;
                 m_globalKernelMatrix = globalKernelMatrix;
                 m_trainingKernelMatrix = trainingKernelMatrix;
                 m_labels = labels;
@@ -42,6 +45,7 @@ public class ThreadController {
 
         public synchronized void saveNoveltyScore(int index, double score) {
                 m_noveltyScores[index] = score;
+                m_exec.setProgress((double) index / m_noveltyScores.length);
         }
 
         public synchronized int getNextIndex() {
