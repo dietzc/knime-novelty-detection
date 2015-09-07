@@ -74,7 +74,6 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
-import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.defaultnodesettings.SettingsModelFilterString;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
@@ -99,6 +98,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
         private static final int DEFAULT_NUMBER_OF_NEIGHBORS = 5;
         static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK", "RBF"};
+        private static final boolean DEFAULT_PARALLEL_EXECUTION = true;
 
         /**
          * Helper
@@ -122,16 +122,11 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 return new SettingsModelString("Class", "");
         }
 
-        static SettingsModelBoolean createParallelExecutionModel() {
-                return new SettingsModelBoolean("parallelExecution", true);
-        }
-
         /* SettingsModels */
         private SettingsModelInteger m_numberOfNeighborsModel = createNumberOfNeighborsModel();
         private SettingsModelString m_kernelFunctionModel = createKernelFunctionSelectionModel();
         private SettingsModelFilterString m_columnSelection = createColumnSelectionModel();
         private SettingsModelString m_classColumn = createClassColumnSelectionModel();
-        private SettingsModelBoolean m_parallelExecution = createParallelExecutionModel();
 
         /* Resulting BufferedDataTable */
         private BufferedDataTable m_data;
@@ -251,8 +246,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 // Calculate Local model for each row in the test table
                 int currentRowIdx = 0;
                 final int rowCount = testIn.getRowCount();
-                ThreadController threadController = new ThreadController(globalKernelMatrix, trainingKernelMatrix, labels, numberOfNeighbors);
+
+                ThreadController threadController = new ThreadController(exec, globalKernelMatrix, trainingKernelMatrix, labels, numberOfNeighbors);
                 double[] noveltyScores = threadController.process();
+
                 for (DataRow row : testIn) {
 
                         /*
