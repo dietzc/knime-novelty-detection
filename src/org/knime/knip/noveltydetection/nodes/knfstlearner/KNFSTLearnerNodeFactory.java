@@ -48,8 +48,6 @@
  */
 package org.knime.knip.noveltydetection.nodes.knfstlearner;
 
-import net.imglib2.type.numeric.RealType;
-
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeView;
@@ -57,15 +55,11 @@ import org.knime.core.node.NodeView;
 /**
  * {@link NodeFactory} for {@link KNFSTLearnerNodeModel}
  *
- * @author <a href="mailto:dietzc85@googlemail.com">Christian Dietz</a>
- * @author <a href="mailto:horn_martin@gmx.de">Martin Horn</a>
- * @author <a href="mailto:michael.zinsmaier@googlemail.com">Michael
- *         Zinsmaier</a>
+ * @author <a href="mailto:adrian.nembach@uni-konstanz.de">Adrian Nembach</a>
  *
  * @param <L>
- * @param <T>
  */
-public class KNFSTLearnerNodeFactory<L extends Number & Comparable<L>, T extends RealType<T>> extends NodeFactory<KNFSTLearnerNodeModel<L, T>> {
+public class KNFSTLearnerNodeFactory<L extends Number & Comparable<L>> extends NodeFactory<KNFSTLearnerNodeModel<L>> {
 
         /**
          * {@inheritDoc}
@@ -79,15 +73,15 @@ public class KNFSTLearnerNodeFactory<L extends Number & Comparable<L>, T extends
          * {@inheritDoc}
          */
         @Override
-        public KNFSTLearnerNodeModel<L, T> createNodeModel() {
-                return new KNFSTLearnerNodeModel<L, T>();
+        public KNFSTLearnerNodeModel<L> createNodeModel() {
+                return new KNFSTLearnerNodeModel<L>();
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public NodeView<KNFSTLearnerNodeModel<L, T>> createNodeView(final int viewIndex, final KNFSTLearnerNodeModel<L, T> nodeModel) {
+        public NodeView<KNFSTLearnerNodeModel<L>> createNodeView(final int viewIndex, final KNFSTLearnerNodeModel<L> nodeModel) {
                 return null;
         }
 

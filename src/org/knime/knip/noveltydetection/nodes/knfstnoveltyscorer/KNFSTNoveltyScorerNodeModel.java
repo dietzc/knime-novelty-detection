@@ -52,8 +52,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.imglib2.type.numeric.RealType;
-
 import org.apache.commons.math3.linear.RealMatrix;
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
@@ -82,17 +80,13 @@ import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObject;
 import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObjectSpec;
 
 /**
- * Crop BitMasks or parts of images according to a Labeling
+ * Calculates novelty scores for test data based on a KNFST model from a
+ * KNFSTLearner-node
  *
- * @author <a href="mailto:dietzc85@googlemail.com">Christian Dietz</a>
- * @author <a href="mailto:horn_martin@gmx.de">Martin Horn</a>
- * @author <a href="mailto:michael.zinsmaier@googlemail.com">Michael
- *         Zinsmaier</a>
+ * @author <a href="mailto:adrian.nembach@gmx.net">Adrian Nembach</a>
  * @param <L>
- * @param <T>
  */
-@SuppressWarnings("deprecation")
-public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel implements BufferedDataTableHolder {
+public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeModel implements BufferedDataTableHolder {
 
         static final boolean DEFAULT_APPEND_NOVELTY_SCORE = true;
         static final boolean DEFAULT_APPEND_NULLSPACE_COORDINATES = false;
@@ -171,7 +165,7 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
          * {@inheritDoc}
          */
         @Override
-        @SuppressWarnings({"unchecked"})
+        @SuppressWarnings({})
         protected BufferedDataTable[] execute(final PortObject[] inData, final ExecutionContext exec) throws Exception {
 
                 final KNFST knfst = ((KNFSTPortObject) inData[0]).getKNFST();

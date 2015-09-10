@@ -53,8 +53,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-import net.imglib2.type.numeric.RealType;
-
 import org.apache.commons.math3.linear.RealMatrix;
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
@@ -92,14 +90,11 @@ import org.knime.knip.noveltydetection.knfst.alternative.RBFKernel;
 /**
  * Crop BitMasks or parts of images according to a Labeling
  *
- * @author <a href="mailto:dietzc85@googlemail.com">Christian Dietz</a>
- * @author <a href="mailto:horn_martin@gmx.de">Martin Horn</a>
- * @author <a href="mailto:michael.zinsmaier@googlemail.com">Michael
- *         Zinsmaier</a>
+ * @author <a href="mailto:adrian.nembach@uni-konstanz.de">Adrian Nembach</a>
+ * 
  * @param <L>
- * @param <T>
  */
-public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel implements BufferedDataTableHolder {
+public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeModel implements BufferedDataTableHolder {
 
         private static final int DEFAULT_NUMBER_OF_NEIGHBORS = 5;
         static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK", "RBF"};

@@ -55,8 +55,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
-import net.imglib2.type.numeric.RealType;
-
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
@@ -93,16 +91,14 @@ import org.knime.knip.noveltydetection.knfst.alternative.OneClassKNFST;
 import org.knime.knip.noveltydetection.knfst.alternative.RBFKernel;
 
 /**
- * Crop BitMasks or parts of images according to a Labeling
+ * Learns a Kernel Null Foley-Sammon model that can be utilized for Novelty
+ * Detection
  *
- * @author <a href="mailto:dietzc85@googlemail.com">Christian Dietz</a>
- * @author <a href="mailto:horn_martin@gmx.de">Martin Horn</a>
- * @author <a href="mailto:michael.zinsmaier@googlemail.com">Michael
- *         Zinsmaier</a>
+ * @author <a href="mailto:adrian.nembach@uni-konstanz.de">Adrian Nembach</a>
+ * 
  * @param <L>
- * @param <T>
  */
-public class KNFSTLearnerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel {
+public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
 
         static final int DATA_INPORT = 0;
         static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK", "RBF"};
