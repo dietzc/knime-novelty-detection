@@ -14,6 +14,14 @@ public class MatrixFunctionsTest {
         RealMatrix matrixA = MatrixUtils.createRealMatrix(new double[][] { {1, 2, 3}, {1, 2, 3}, {1, 2, 3}});
         RealMatrix matrixI = MatrixUtils.createRealIdentityMatrix(3);
         double[] testArray = new double[] {-1, 1, 0, -2000};
+        RealVector vector = MatrixUtils.createRealVector(new double[] {1, 2, 3, 4});
+
+        @Test
+        public void testMatrixEquality() {
+                RealMatrix m1 = MatrixUtils.createRealMatrix(new double[][] { {1, 2}, {1, 2}});
+                RealMatrix m2 = m1.copy();
+                assertEquals(m1, m2);
+        }
 
         @Test
         public void testColumnMeans() {
@@ -72,7 +80,83 @@ public class MatrixFunctionsTest {
 
         @Test
         public void testSqrtMatrix() {
-
+                RealMatrix result = MatrixFunctions.sqrt(matrixA);
+                for (int r = 0; r < result.getRowDimension(); r++) {
+                        for (int c = 0; c < result.getColumnDimension(); c++)
+                                assertEquals(Math.sqrt(matrixA.getEntry(r, c)), result.getEntry(r, c), 0);
+                }
         }
 
+        @Test
+        public void testSqrtVector() {
+                RealVector result = MatrixFunctions.sqrt(vector);
+                for (int i = 0; i < result.getDimension(); i++) {
+                        assertEquals(Math.sqrt(vector.getEntry(i)), result.getEntry(i), 0);
+                }
+        }
+
+        @Test(expected = IllegalArgumentException.class)
+        public void testExceptionMultiplyElementWise() {
+                RealMatrix m1 = MatrixUtils.createRealMatrix(new double[][] { {1, 2, 3}, {1, 2, 3}});
+                MatrixFunctions.multiplyElementWise(m1, matrixA);
+        }
+
+        @Test
+        public void testMultiplyElementWise() {
+                RealMatrix expected = MatrixUtils.createRealMatrix(new double[][] { {1, 0, 0}, {0, 2, 0}, {0, 0, 3}});
+                RealMatrix result = MatrixFunctions.multiplyElementWise(matrixI, matrixA);
+                assertEquals(expected, result);
+        }
+
+        @Test
+        public void testRowSums() {
+                RealVector expected = MatrixUtils.createRealVector(new double[] {6, 6, 6});
+                assertEquals(expected, MatrixFunctions.rowSums(matrixA));
+        }
+
+        @Test
+        public void testPow() {
+                RealMatrix result = MatrixFunctions.pow(matrixA, 2);
+                for (int r = 0; r < result.getRowDimension(); r++) {
+                        for (int c = 0; c < result.getColumnDimension(); c++) {
+                                assertEquals(Math.pow(matrixA.getEntry(r, c), 2), result.getEntry(r, c), 0);
+                        }
+                }
+        }
+
+        @Test(expected = IllegalArgumentException.class)
+        public void testExceptionConcatHorizontally() {
+                RealMatrix m1 = MatrixUtils.createRealMatrix(new double[][] { {1, 2, 3}, {1, 2, 3}});
+                MatrixFunctions.concatHorizontally(m1, matrixA);
+        }
+
+        @Test
+        public void testConcatHorizontally() {
+                RealMatrix expected = MatrixUtils.createRealMatrix(new double[][] { {1, 0, 0, 1, 2, 3}, {0, 1, 0, 1, 2, 3}, {0, 0, 1, 1, 2, 3}});
+                assertEquals(expected, MatrixFunctions.concatHorizontally(matrixI, matrixA));
+        }
+
+        @Test(expected = IllegalArgumentException.class)
+        public void testExceptionConcatVertically() {
+                RealMatrix m1 = MatrixUtils.createRealMatrix(new double[][] { {1, 2}, {1, 2}});
+                MatrixFunctions.concatVertically(m1, matrixA);
+        }
+
+        @Test
+        public void testConcatVertically() {
+                RealMatrix expected = MatrixUtils
+                                .createRealMatrix(new double[][] { {1, 0, 0}, {0, 1, 0}, {0, 0, 1}, {1, 2, 3}, {1, 2, 3}, {1, 2, 3}});
+                MatrixFunctions.concatVertically(matrixI, matrixA);
+        }
+
+        @Test
+        public void testCalculateRowVectorDistances() {
+                RealMatrix m1 = MatrixUtils.createRealMatrix(new double[][] { {1, 2, 3}, {4, 5, 6}, {7, 8, 9}});
+                double[] expected = new double[] {Math.sqrt(27), Math.sqrt(108), Math.sqrt(27)};
+                double[] result = MatrixFunctions.calculateRowVectorDistances(m1);
+
+                for (int i = 0; i < result.length; i++) {
+                        assertEquals(expected[i], result[i], 1e-12);
+                }
+        }
 }
