@@ -1,8 +1,12 @@
 package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -22,7 +26,7 @@ public class ValueIndexPairTest {
         }
 
         @Test
-        public void testGetK() {
+        public void testGetKSimple() {
                 ValueIndexPair[] expected = new ValueIndexPair[] {new ValueIndexPair(1, 0), new ValueIndexPair(2, 1)};
                 Comparator<ValueIndexPair> comparator = new Comparator<ValueIndexPair>() {
                         public int compare(ValueIndexPair o1, ValueIndexPair o2) {
@@ -35,9 +39,71 @@ public class ValueIndexPairTest {
                                 }
                         }
                 };
-                ValueIndexPair[] result = ValueIndexPair.getK(testArray, 2, comparator);
-                for (int i = 0; i < result.length; i++) {
-                        assertEquals(expected[i], result[i]);
+                ArrayList<ValueIndexPair> result = new ArrayList<ValueIndexPair>(Arrays.asList(ValueIndexPair.getK(testArray, 2, comparator)));
+                for (int i = 0; i < expected.length; i++) {
+                        assertTrue(result.contains(expected[i]));
+                }
+        }
+
+        @Test
+        public void testGetKRandomMinima() {
+                double[] array = new double[100];
+                for (int i = 0; i < array.length; i++) {
+                        array[i] = Math.random();
+                }
+                ValueIndexPair[] valIndexArray = ValueIndexPair.transformArray2ValueIndexPairArray(array);
+                ArrayList<ValueIndexPair> expectedFullList = new ArrayList<ValueIndexPair>(Arrays.asList(valIndexArray));
+
+                Comparator<ValueIndexPair> comparator = new Comparator<ValueIndexPair>() {
+                        public int compare(ValueIndexPair o1, ValueIndexPair o2) {
+                                if (o1.getValue() < o2.getValue()) {
+                                        return -1;
+                                } else if (o1.getValue() > o2.getValue()) {
+                                        return 1;
+                                } else {
+                                        return 0;
+                                }
+                        }
+                };
+
+                expectedFullList.sort(comparator);
+                List<ValueIndexPair> expected = expectedFullList.subList(0, 19);
+
+                ArrayList<ValueIndexPair> result = new ArrayList<ValueIndexPair>(Arrays.asList(ValueIndexPair.getK(valIndexArray, 20, comparator)));
+
+                for (ValueIndexPair pair : expected) {
+                        assertTrue(result.contains(pair));
+                }
+        }
+
+        @Test
+        public void testGetKRandomMaxima() {
+                double[] array = new double[100];
+                for (int i = 0; i < array.length; i++) {
+                        array[i] = Math.random();
+                }
+                ValueIndexPair[] valIndexArray = ValueIndexPair.transformArray2ValueIndexPairArray(array);
+                ArrayList<ValueIndexPair> expectedFullList = new ArrayList<ValueIndexPair>(Arrays.asList(valIndexArray));
+
+                Comparator<ValueIndexPair> comparator = new Comparator<ValueIndexPair>() {
+                        public int compare(ValueIndexPair o1, ValueIndexPair o2) {
+                                if (o1.getValue() < o2.getValue()) {
+                                        return 1;
+                                } else if (o1.getValue() > o2.getValue()) {
+                                        return -1;
+                                } else {
+                                        return 0;
+                                }
+                        }
+                };
+
+                expectedFullList.sort(comparator);
+                List<ValueIndexPair> expected = expectedFullList.subList(0, 19);
+
+                ArrayList<ValueIndexPair> result = new ArrayList<ValueIndexPair>(Arrays.asList(ValueIndexPair.getK(valIndexArray, 20, comparator)));
+
+                for (ValueIndexPair pair : expected) {
+                        assertTrue(result.contains(pair));
                 }
         }
 }

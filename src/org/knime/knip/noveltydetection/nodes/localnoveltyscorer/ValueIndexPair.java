@@ -58,7 +58,7 @@ public class ValueIndexPair {
          *              comparator: Comparator for the ValueIndexPair class
          * Output: ValueIndexPair array with k elements
          */
-        public static ValueIndexPair[] getK(ValueIndexPair[] array, int k, Comparator<ValueIndexPair> comparator) {
+        public static ValueIndexPair[] getK(ValueIndexPair[] array, int k, final Comparator<ValueIndexPair> comparator) {
                 if (k < 1) {
                         throw new IllegalArgumentException("k must be greater than zero!");
                 }
@@ -66,13 +66,19 @@ public class ValueIndexPair {
                         throw new IllegalArgumentException("k must be smaller or equal to the length of the array!");
                 }
 
-                PriorityQueue<ValueIndexPair> heap = new PriorityQueue<ValueIndexPair>(k, comparator);
+                Comparator<ValueIndexPair> heapComp = new Comparator<ValueIndexPair>() {
+                        public int compare(ValueIndexPair o1, ValueIndexPair o2) {
+                                return -comparator.compare(o1, o2);
+                        }
+                };
+
+                PriorityQueue<ValueIndexPair> heap = new PriorityQueue<ValueIndexPair>(k, heapComp);
 
                 for (int i = 0; i < array.length; i++) {
-                        if (i < k - 1) {
+                        if (i < k) {
                                 heap.add(array[i]);
                         } else {
-                                if (comparator.compare(array[i], heap.peek()) == 1) {
+                                if (comparator.compare(array[i], heap.peek()) == -1) {
                                         heap.poll();
                                         heap.add(array[i]);
                                 }

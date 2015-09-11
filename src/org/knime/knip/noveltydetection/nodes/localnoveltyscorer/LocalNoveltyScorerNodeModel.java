@@ -247,10 +247,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 final int rowCount = testIn.getRowCount();
                 for (DataRow row : testIn) {
 
-                        // Sort training samples according to distance to current sample in kernel feature space
+                        // Get nearest neighbors according to distance to current sample in kernel feature space
 
                         ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(globalKernelMatrix.getColumn(currentRowIdx));
-                        Arrays.sort(distances, new Comparator<ValueIndexPair>() {
+                        ValueIndexPair[] neighbors = ValueIndexPair.getK(distances, numberOfNeighbors, new Comparator<ValueIndexPair>() {
                                 public int compare(ValueIndexPair o1, ValueIndexPair o2) {
                                         double v1 = o1.getValue();
                                         double v2 = o2.getValue();
@@ -262,12 +262,6 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                                         return res;
                                 }
                         });
-
-                        // get nearest neighbors
-                        ValueIndexPair[] neighbors = new ValueIndexPair[numberOfNeighbors];
-                        for (int i = 0; i < neighbors.length; i++) {
-                                neighbors[i] = distances[i];
-                        }
 
                         // Sort neighbors according to class
                         // NOTE: Since the instances are ordered by class in the original table
