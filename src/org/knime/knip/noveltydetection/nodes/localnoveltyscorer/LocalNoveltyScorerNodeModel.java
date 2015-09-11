@@ -290,11 +290,13 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                                 localLabels[i] = label;
                                 trainingMatrixIndices[i] = neighbors[i].getIndex();
                         }
+                        // get kernel matrix of local training data
                         RealMatrix localTrainingKernelMatrix = trainingKernelMatrix.getSubMatrix(trainingMatrixIndices, trainingMatrixIndices);
 
                         double score = 0;
                         KNFST localModel = null;
 
+                        // train model
                         if (oneClass) {
                                 localModel = new OneClassKNFST(localTrainingKernelMatrix);
                         } else {
