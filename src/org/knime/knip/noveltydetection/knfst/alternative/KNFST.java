@@ -34,10 +34,10 @@ public abstract class KNFST implements Externalizable {
 
         public static RealMatrix projection(final RealMatrix kernelMatrix, final String[] labels) {
 
-                ArrayList<ClassWrapper> classes = ClassWrapper.classes(labels);
+                ClassWrapper[] classes = ClassWrapper.classes(labels);
 
                 // check labels
-                if (classes.size() == 1) {
+                if (classes.length == 1) {
                         throw new IllegalArgumentException(
                                         "not able to calculate a nullspace from data of a single class using KNFST (input variable \"labels\" only contains a single value)");
                 }
@@ -157,88 +157,6 @@ public abstract class KNFST implements Externalizable {
                 RealMatrix proj = ((I.subtract(M)).multiply(basisvecs)).multiply(eigenvecs);
 
                 return proj;
-        }
-
-        public RealMatrix alternativeProjection(RealMatrix kernelMatrix, String[] labels) {
-                ArrayList<ClassWrapper> classes = ClassWrapper.classes(labels);
-                int n = kernelMatrix.getColumnDimension();
-
-                RealMatrix matrixI = MatrixUtils.createRealIdentityMatrix(n);
-                RealMatrix matrixM = MatrixFunctions.ones(n, n);
-
-                // calculate centered Kernel Matrix
-                RealMatrix matrixImM = matrixI.subtract(matrixM);
-                RealMatrix centeredK = (matrixImM.transpose()).multiply(kernelMatrix).multiply(matrixImM);
-
-                // get basis of St(0).ort
-
-                EigenDecomposition eig = new EigenDecomposition(centeredK);
-                double[] eigVals = eig.getRealEigenvalues();
-                ArrayList<Integer> nonZeroEigValIndices = new ArrayList<Integer>();
-                for (int i = 0; i < eigVals.length; i++) {
-                        if (eigVals[i] > 1e-12) {
-                                nonZeroEigValIndices.add(i);
-                        }
-                }
-                double[] nonZeroEigVals = new double[nonZeroEigValIndices.size()];
-
-                int eigIterator = 0;
-                RealMatrix eigVecs = eig.getV();
-                RealMatrix basisVecs = MatrixUtils.createRealMatrix(eigVecs.getRowDimension(), nonZeroEigValIndices.size());
-                for (Integer index : nonZeroEigValIndices) {
-                        double normalizer = 1 / Math.sqrt(eigVals[index]);
-                        RealVector basisVec = eigVecs.getColumnVector(eigIterator).mapMultiply(normalizer);
-                        basisVecs.setColumnVector(eigIterator++, basisVec);
-                }
-
-                // Calculate Matrix H
-                RealMatrix matrixH = basisVecs;
-
-                // Calculate Matrix L
-                RealMatrix[] matrixLsubs = new RealMatrix[classes.size()];
-                RealMatrix matrixL = MatrixUtils.createRealMatrix(n, n);
-                int classStart = 0;
-                for (int i = 0; i < classes.size(); i++) {
-                        int count = classes.get(i).getCount();
-                        matrixL.setSubMatrix(MatrixUtils.createRealMatrix(count, count).scalarAdd(1 / count).getData(), classStart, classStart);
-                        classStart += count;
-                }
-
-                // Calculate Matrix W
-                RealMatrix matrixImL = matrixI.subtract(matrixL);
-                RealMatrix matrixW = (matrixH.transpose()).multiply(matrixImM.transpose()).multiply(kernelMatrix).multiply(matrixImL)
-                                .multiply(matrixImL.transpose()).multiply(kernelMatrix).multiply(matrixImM).multiply(matrixH);
-
-                EigenDecomposition eigW = new EigenDecomposition(matrixW);
-                double[] eigValsW = eigW.getRealEigenvalues();
-                ArrayList<Integer> zeroEigVals = new ArrayList<Integer>();
-                for (int i = 0; i < eigValsW.length; i++) {
-                        if (eigValsW[i] == 0) {
-                                zeroEigVals.add(i);
-                        }
-                }
-
-                // Calculate Matrix U
-                eigVecs = eigW.getV();
-                RealMatrix matrixU = MatrixUtils.createRealMatrix(eigVecs.getRowDimension(), zeroEigVals.size());
-                eigIterator = 0;
-                for (Integer index : zeroEigVals) {
-                        matrixU.setColumnVector(eigIterator++, eigVecs.getColumnVector(index));
-                }
-
-                // Calculate Matrix B
-                RealMatrix matrixLmM = matrixL.subtract(matrixM);
-                RealMatrix matrixB = (matrixU.transpose()).multiply(matrixH.transpose()).multiply(matrixImM.transpose()).multiply(kernelMatrix)
-                                .multiply(matrixLmM).multiply(matrixLmM.transpose()).multiply(kernelMatrix).multiply(matrixImM).multiply(matrixH)
-                                .multiply(matrixU);
-
-                // Calculate projection Vectors
-
-                EigenDecomposition eigB = new EigenDecomposition(matrixB);
-                eigVecs = eigB.getV();
-                RealMatrix projVecs = eigVecs.transpose().multiply(matrixU.transpose()).multiply(matrixH.transpose()).multiply(matrixImM);
-
-                return projVecs;
         }
 
         private static RealMatrix centerKernelMatrix(final RealMatrix kernelMatrix) {
