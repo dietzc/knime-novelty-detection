@@ -49,8 +49,6 @@
 package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 import net.imglib2.type.numeric.RealType;
@@ -82,11 +80,8 @@ import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.knip.noveltydetection.knfst.alternative.EXPHIKKernel;
 import org.knime.knip.noveltydetection.knfst.alternative.HIKKernel;
-import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
 import org.knime.knip.noveltydetection.knfst.alternative.KernelCalculator;
 import org.knime.knip.noveltydetection.knfst.alternative.KernelFunction;
-import org.knime.knip.noveltydetection.knfst.alternative.MultiClassKNFST;
-import org.knime.knip.noveltydetection.knfst.alternative.OneClassKNFST;
 import org.knime.knip.noveltydetection.knfst.alternative.RBFKernel;
 
 /**
@@ -103,6 +98,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
         private static final int DEFAULT_NUMBER_OF_NEIGHBORS = 5;
         static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK", "RBF"};
+        private static final boolean DEFAULT_PARALLEL_EXECUTION = true;
 
         /**
          * Helper
@@ -250,8 +246,13 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 // Calculate Local model for each row in the test table
                 int currentRowIdx = 0;
                 final int rowCount = testIn.getRowCount();
+
+                ThreadController threadController = new ThreadController(exec, globalKernelMatrix, trainingKernelMatrix, labels, numberOfNeighbors);
+                double[] noveltyScores = threadController.process();
+
                 for (DataRow row : testIn) {
 
+                        /*
                         // Sort training samples according to distance to current sample in kernel feature space
 
                         ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(globalKernelMatrix.getColumn(currentRowIdx));
@@ -317,10 +318,11 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                                         globalKernelMatrix.getColumnMatrix(currentRowIdx).getSubMatrix(trainingMatrixIndices, new int[] {0}))
                                         .getScores()[0]
                                         / normalizer;
+                                         */
 
                         DataCell[] cells = new DataCell[row.getNumCells() + 1];
                         for (int c = 0; c < cells.length; c++) {
-                                cells[c] = (c < cells.length - 1) ? row.getCell(c) : new DoubleCell(score);
+                                cells[c] = (c < cells.length - 1) ? row.getCell(c) : new DoubleCell(noveltyScores[currentRowIdx]);
                         }
                         container.addRowToTable(new DefaultRow(row.getKey(), cells));
 
