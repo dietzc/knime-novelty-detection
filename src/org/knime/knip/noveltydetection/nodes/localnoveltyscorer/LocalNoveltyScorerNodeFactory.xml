@@ -74,7 +74,5 @@
 		<inPort index="1" name="Test Data">Test Data</inPort>
 		<outPort index="0" name="Novelty Scores">Novelty Scores</outPort>
 	</ports>
-	<views>
-		<view name="Table Cell View" index="0">Cropped Segments</view>
-	</views>
+
 </knimeNode>
