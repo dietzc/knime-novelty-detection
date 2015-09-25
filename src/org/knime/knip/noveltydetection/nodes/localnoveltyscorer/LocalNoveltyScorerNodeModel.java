@@ -65,6 +65,8 @@ import org.knime.core.data.StringValue;
 import org.knime.core.data.container.ColumnRearranger;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
+import org.knime.core.data.def.StringCell;
+import org.knime.core.data.sort.BufferedDataTableSorter;
 import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.BufferedDataTableHolder;
@@ -74,6 +76,7 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.defaultnodesettings.SettingsModelFilterString;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
@@ -96,8 +99,9 @@ import org.knime.knip.noveltydetection.knfst.alternative.RBFKernel;
  */
 public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeModel implements BufferedDataTableHolder {
 
-        private static final int DEFAULT_NUMBER_OF_NEIGHBORS = 5;
+        private static final int DEFAULT_NUMBER_OF_NEIGHBORS = 100;
         static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK", "RBF"};
+        static final boolean DEFAULT_SORT_TABLE = false;
 
         /**
          * Helper
@@ -121,11 +125,16 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 return new SettingsModelString("Class", "");
         }
 
+        static SettingsModelBoolean createSortTableModel() {
+                return new SettingsModelBoolean("SortTable", DEFAULT_SORT_TABLE);
+        }
+
         /* SettingsModels */
         private SettingsModelInteger m_numberOfNeighborsModel = createNumberOfNeighborsModel();
         private SettingsModelString m_kernelFunctionModel = createKernelFunctionSelectionModel();
         private SettingsModelFilterString m_columnSelection = createColumnSelectionModel();
         private SettingsModelString m_classColumn = createClassColumnSelectionModel();
+        private SettingsModelBoolean m_sortTable = createSortTableModel();
 
         /* Resulting BufferedDataTable */
         private BufferedDataTable m_data;
@@ -188,7 +197,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
         @SuppressWarnings({})
         protected BufferedDataTable[] execute(final BufferedDataTable[] inData, final ExecutionContext exec) throws Exception {
 
-                final BufferedDataTable trainingIn = inData[0];
+                BufferedDataTable trainingIn = inData[0];
                 final BufferedDataTable testIn = inData[1];
                 final BufferedDataContainer container = exec.createDataContainer(createOutSpec(testIn.getDataTableSpec())[0]);
 
@@ -196,6 +205,21 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 ColumnRearranger testRearranger = new ColumnRearranger(testIn.getDataTableSpec());
                 List<String> includedCols = m_columnSelection.getIncludeList();
                 int numberOfNeighbors = m_numberOfNeighborsModel.getIntValue();
+                final int classColIdx = trainingIn.getDataTableSpec().findColumnIndex(m_classColumn.getStringValue());
+
+                if (m_sortTable.getBooleanValue()) {
+                        BufferedDataTableSorter sorter = new BufferedDataTableSorter(trainingIn, new Comparator<DataRow>() {
+
+                                @Override
+                                public int compare(DataRow arg0, DataRow arg1) {
+                                        String c1 = ((StringCell) arg0.getCell(classColIdx)).getStringValue();
+                                        String c2 = ((StringCell) arg1.getCell(classColIdx)).getStringValue();
+                                        return c1.compareTo(c2);
+                                }
+
+                        });
+                        trainingIn = sorter.sort(exec);
+                }
 
                 if (numberOfNeighbors > trainingIn.getRowCount()) {
                         numberOfNeighbors = trainingIn.getRowCount();
@@ -209,7 +233,6 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 double[][] testData = KernelCalculator.readBufferedDataTable(exec.createColumnRearrangeTable(testIn, testRearranger, exec));
 
                 // Get labels for training Data
-                final int classColIdx = trainingIn.getDataTableSpec().findColumnIndex(m_classColumn.getStringValue());
                 String[] labels = new String[trainingIn.getRowCount()];
                 int l = 0;
                 for (DataRow row : trainingIn) {
@@ -350,6 +373,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 m_columnSelection.loadSettingsFrom(settings);
                 m_classColumn.loadSettingsFrom(settings);
                 m_numberOfNeighborsModel.loadSettingsFrom(settings);
+                m_sortTable.loadSettingsFrom(settings);
         }
 
         /**
@@ -377,6 +401,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 m_columnSelection.saveSettingsTo(settings);
                 m_classColumn.saveSettingsTo(settings);
                 m_numberOfNeighborsModel.saveSettingsTo(settings);
+                m_sortTable.saveSettingsTo(settings);
         }
 
         /**
@@ -396,6 +421,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 m_columnSelection.validateSettings(settings);
                 m_classColumn.validateSettings(settings);
                 m_numberOfNeighborsModel.validateSettings(settings);
+                m_sortTable.validateSettings(settings);
         }
 
         /****************** Private helper methods *************************************************/

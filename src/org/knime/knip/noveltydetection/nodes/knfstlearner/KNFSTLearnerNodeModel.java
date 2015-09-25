@@ -68,6 +68,7 @@ import org.knime.core.data.container.ColumnRearranger;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.StringCell;
+import org.knime.core.data.sort.BufferedDataTableSorter;
 import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.ExecutionContext;
@@ -76,6 +77,7 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.defaultnodesettings.SettingsModelFilterString;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.core.node.port.PortObject;
@@ -103,6 +105,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
         static final int DATA_INPORT = 0;
         static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK", "RBF"};
         static final String DEFAULT_KERNEL = AVAILABLE_KERNELS[0];
+        static final boolean DEFAULT_SORT_TABLES = false;
 
         /**
          * Helper
@@ -121,10 +124,15 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 return new SettingsModelString("Class", "");
         }
 
+        static SettingsModelBoolean createSortTableModel() {
+                return new SettingsModelBoolean("SortTables", DEFAULT_SORT_TABLES);
+        }
+
         /* SettingsModels */
         private SettingsModelString m_kernelFunctionModel = createKernelFunctionSelectionModel();
         private SettingsModelFilterString m_columnSelection = createColumnSelectionModel();
         private SettingsModelString m_classColumn = createClassColumnSelectionModel();
+        private SettingsModelBoolean m_sortTable = createSortTableModel();
 
         private List<String> m_compatibleFeatures;
 
@@ -192,6 +200,22 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 String kernelFunctionName = m_kernelFunctionModel.getStringValue();
 
                 final int classColIdx = data.getSpec().findColumnIndex(m_classColumn.getStringValue());
+
+                // sort table if necessary
+                if (m_sortTable.getBooleanValue()) {
+                        BufferedDataTableSorter sorter = new BufferedDataTableSorter(data, new Comparator<DataRow>() {
+
+                                @Override
+                                public int compare(DataRow arg0, DataRow arg1) {
+                                        String c1 = ((StringCell) arg0.getCell(classColIdx)).getStringValue();
+                                        String c2 = ((StringCell) arg1.getCell(classColIdx)).getStringValue();
+                                        return c1.compareTo(c2);
+                                }
+
+                        });
+                        data = sorter.sort(exec);
+                }
+
                 String[] labels = new String[data.getRowCount()];
                 int l = 0;
                 boolean oneClass = true;
@@ -295,6 +319,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 m_kernelFunctionModel.loadSettingsFrom(settings);
                 m_columnSelection.loadSettingsFrom(settings);
                 m_classColumn.loadSettingsFrom(settings);
+                m_sortTable.loadSettingsFrom(settings);
         }
 
         /**
@@ -321,6 +346,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 m_kernelFunctionModel.saveSettingsTo(settings);
                 m_columnSelection.saveSettingsTo(settings);
                 m_classColumn.saveSettingsTo(settings);
+                m_sortTable.saveSettingsTo(settings);
         }
 
         /**
@@ -331,5 +357,6 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 m_kernelFunctionModel.validateSettings(settings);
                 m_columnSelection.validateSettings(settings);
                 m_classColumn.validateSettings(settings);
+                m_sortTable.validateSettings(settings);
         }
 }

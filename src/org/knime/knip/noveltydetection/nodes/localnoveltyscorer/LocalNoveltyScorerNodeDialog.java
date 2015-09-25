@@ -3,6 +3,7 @@ package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 import org.knime.core.data.DoubleValue;
 import org.knime.core.data.StringValue;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
+import org.knime.core.node.defaultnodesettings.DialogComponentBoolean;
 import org.knime.core.node.defaultnodesettings.DialogComponentColumnFilter;
 import org.knime.core.node.defaultnodesettings.DialogComponentColumnNameSelection;
 import org.knime.core.node.defaultnodesettings.DialogComponentNumber;
@@ -26,5 +27,8 @@ public class LocalNoveltyScorerNodeDialog<L extends Comparable<L>> extends Defau
                                 LocalNoveltyScorerNodeModel.AVAILABLE_KERNELS));
 
                 addDialogComponent(new DialogComponentNumber(LocalNoveltyScorerNodeModel.createNumberOfNeighborsModel(), "Number of Neighbors", 1));
+
+                addDialogComponent(new DialogComponentBoolean(LocalNoveltyScorerNodeModel.createSortTableModel(),
+                                "Sort training table (only select if not already sorted by class)"));
         }
 }
