@@ -8,7 +8,6 @@ public class KNFSTNoveltyScorerNodeDialog<L extends Comparable<L>> extends Defau
         /**
          * Default Constructor
          */
-        @SuppressWarnings("unchecked")
         public KNFSTNoveltyScorerNodeDialog() {
                 // Checkbox for appending Novelty Score
                 addDialogComponent(new DialogComponentBoolean(KNFSTNoveltyScorerNodeModel.createAppendNoveltyScoreModel(), "Append Novelty Score"));
@@ -16,6 +15,9 @@ public class KNFSTNoveltyScorerNodeDialog<L extends Comparable<L>> extends Defau
                 // Checkbox for appending Nullspace Coordinates
                 addDialogComponent(new DialogComponentBoolean(KNFSTNoveltyScorerNodeModel.createAppendNullspaceCoordinates(),
                                 "Append Nullspace Coordinates"));
+
+                // Checkbox for normalizing novelty score
+                addDialogComponent(new DialogComponentBoolean(KNFSTNoveltyScorerNodeModel.createNormalizeModel(), "Normalize Novelty Score"));
 
         }
 }

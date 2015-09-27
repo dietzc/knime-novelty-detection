@@ -90,6 +90,7 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
 
         static final boolean DEFAULT_APPEND_NOVELTY_SCORE = true;
         static final boolean DEFAULT_APPEND_NULLSPACE_COORDINATES = false;
+        static final boolean DEFAULT_NORMALIZE = true;
 
         /**
          * Helper
@@ -105,12 +106,17 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 return new SettingsModelBoolean("AppendNullspaceCoordinatesModel", DEFAULT_APPEND_NULLSPACE_COORDINATES);
         }
 
+        static SettingsModelBoolean createNormalizeModel() {
+                return new SettingsModelBoolean("NormalizeModel", DEFAULT_NORMALIZE);
+        }
+
         DataTableSpec m_inTableSpec;
 
         /* SettingsModels */
 
         private SettingsModelBoolean m_appendNoveltyScore = createAppendNoveltyScoreModel();
         private SettingsModelBoolean m_appendNullspaceCoordinates = createAppendNullspaceCoordinates();
+        private SettingsModelBoolean m_normalize = createNormalizeModel();
 
         /* Resulting BufferedDataTable */
         private BufferedDataTable m_data;
@@ -190,12 +196,15 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 if (m_appendNoveltyScore.getBooleanValue()) {
                         outColSpecs.add(new DataColumnSpecCreator("Novelty Score", DoubleCell.TYPE).createSpec());
                         scores = noveltyScores.getScores();
-                        // add options for different normalizations
-                        double normalizer = getMin(knfst.getBetweenClassDistances());
 
-                        // normalize scores
-                        for (int i = 0; i < scores.length; i++) {
-                                scores[i] = scores[i] / normalizer;
+                        if (m_normalize.getBooleanValue()) {
+                                // add options for different normalizations
+                                double normalizer = getMin(knfst.getBetweenClassDistances());
+
+                                // normalize scores
+                                for (int i = 0; i < scores.length; i++) {
+                                        scores[i] = scores[i] / normalizer;
+                                }
                         }
                         additionalCells++;
                 }
@@ -264,6 +273,7 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
         protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
                 m_appendNoveltyScore.loadSettingsFrom(settings);
                 m_appendNullspaceCoordinates.loadSettingsFrom(settings);
+                m_normalize.loadSettingsFrom(settings);
         }
 
         /**
@@ -289,6 +299,7 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
         protected void saveSettingsTo(final NodeSettingsWO settings) {
                 m_appendNoveltyScore.saveSettingsTo(settings);
                 m_appendNullspaceCoordinates.saveSettingsTo(settings);
+                m_normalize.saveSettingsTo(settings);
         }
 
         /**
@@ -306,6 +317,7 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
         protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
                 m_appendNoveltyScore.validateSettings(settings);
                 m_appendNullspaceCoordinates.validateSettings(settings);
+                m_normalize.validateSettings(settings);
         }
 
         /****************** Private helper methods *************************************************/
