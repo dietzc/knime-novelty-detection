@@ -1,4 +1,4 @@
-package org.knime.knip.noveltydetection.knfst.alternative;
+package org.knime.knip.noveltydetection.knfst;
 
 public class KernelCalculationThread extends Thread {
         private final KernelFunction m_kernelFunction;

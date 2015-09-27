@@ -17,7 +17,7 @@ import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortObjectZipInputStream;
 import org.knime.core.node.port.PortObjectZipOutputStream;
 import org.knime.core.node.port.PortType;
-import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
+import org.knime.knip.noveltydetection.knfst.KNFST;
 
 public class KNFSTPortObject implements PortObject {
 

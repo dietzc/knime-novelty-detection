@@ -8,6 +8,7 @@ import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.junit.Test;
+import org.knime.knip.noveltydetection.knfst.MatrixFunctions;
 
 public class MatrixFunctionsTest {
 

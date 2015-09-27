@@ -74,8 +74,8 @@ import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
-import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
-import org.knime.knip.noveltydetection.knfst.alternative.NoveltyScores;
+import org.knime.knip.noveltydetection.knfst.KNFST;
+import org.knime.knip.noveltydetection.knfst.NoveltyScores;
 import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObject;
 import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObjectSpec;
 

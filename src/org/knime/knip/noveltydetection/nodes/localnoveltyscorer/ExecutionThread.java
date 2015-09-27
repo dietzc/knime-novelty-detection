@@ -4,9 +4,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import org.apache.commons.math3.linear.RealMatrix;
-import org.knime.knip.noveltydetection.knfst.alternative.KNFST;
-import org.knime.knip.noveltydetection.knfst.alternative.MultiClassKNFST;
-import org.knime.knip.noveltydetection.knfst.alternative.OneClassKNFST;
+import org.knime.knip.noveltydetection.knfst.KNFST;
+import org.knime.knip.noveltydetection.knfst.MultiClassKNFST;
+import org.knime.knip.noveltydetection.knfst.OneClassKNFST;
 
 public class ExecutionThread implements Runnable {
         private RealMatrix m_globalKernelMatrix;

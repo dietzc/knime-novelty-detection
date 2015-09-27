@@ -3,6 +3,7 @@ package org.knime.knip.noveltydetection.knfst.alternative;
 import static org.junit.Assert.assertArrayEquals;
 
 import org.junit.Test;
+import org.knime.knip.noveltydetection.knfst.ClassWrapper;
 
 public class ClassWrapperTest {
 

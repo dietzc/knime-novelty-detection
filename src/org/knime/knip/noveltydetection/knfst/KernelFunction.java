@@ -1,4 +1,4 @@
-package org.knime.knip.noveltydetection.knfst.alternative;
+package org.knime.knip.noveltydetection.knfst;
 
 import java.io.Externalizable;
 
