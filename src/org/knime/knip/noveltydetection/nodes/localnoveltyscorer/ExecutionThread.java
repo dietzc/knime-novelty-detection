@@ -12,16 +12,18 @@ public class ExecutionThread implements Runnable {
         private RealMatrix m_globalKernelMatrix;
         private RealMatrix m_trainingKernelMatrix;
         private int m_numNeighbors;
+        private boolean m_normalize;
         private String[] m_labels;
         private ThreadController m_controller;
 
         public ExecutionThread(ThreadController controller, RealMatrix globalKernelMatrix, RealMatrix trainingKernelMatrix, String[] labels,
-                        int numNeighbors) {
+                        int numNeighbors, boolean normalize) {
                 m_controller = controller;
                 m_globalKernelMatrix = globalKernelMatrix;
                 m_trainingKernelMatrix = trainingKernelMatrix;
                 m_labels = labels;
                 m_numNeighbors = numNeighbors;
+                m_normalize = normalize;
         }
 
         @Override
@@ -91,11 +93,15 @@ public class ExecutionThread implements Runnable {
                                 localModel = new MultiClassKNFST(localTrainingKernelMatrix, localLabels);
                         }
 
-                        double normalizer = Tools.getMin(localModel.getBetweenClassDistances());
                         score = localModel.scoreTestData(
                                         m_globalKernelMatrix.getColumnMatrix(testIndex).getSubMatrix(trainingMatrixIndices, new int[] {0}))
-                                        .getScores()[0]
-                                        / normalizer;
+                                        .getScores()[0];
+
+                        // normalize novelty score
+                        if (m_normalize) {
+                                double normalizer = Tools.getMin(localModel.getBetweenClassDistances());
+                                score = score / normalizer;
+                        }
 
                         // save novelty score
                         m_controller.saveNoveltyScore(testIndex, score);

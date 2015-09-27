@@ -9,16 +9,20 @@ public class ThreadController {
         private RealMatrix m_trainingKernelMatrix;
         private String[] m_labels;
         private int m_numNeighbors;
+        private boolean m_normalize;
+
         private double[] m_noveltyScores;
         private int m_currentIndex;
 
         public ThreadController(final ExecutionContext exec, final RealMatrix globalKernelMatrix, final RealMatrix trainingKernelMatrix,
-                        final String[] labels, final int numNeighbors) {
+                        final String[] labels, final int numNeighbors, final boolean normalize) {
                 m_exec = exec;
                 m_globalKernelMatrix = globalKernelMatrix;
                 m_trainingKernelMatrix = trainingKernelMatrix;
                 m_labels = labels;
                 m_numNeighbors = numNeighbors;
+                m_normalize = normalize;
+
                 m_noveltyScores = new double[globalKernelMatrix.getColumnDimension()];
         }
 
@@ -28,7 +32,8 @@ public class ThreadController {
 
                 Thread[] threads = new Thread[numCores];
                 for (int i = 0; i < threads.length; i++) {
-                        threads[i] = new Thread(new ExecutionThread(this, m_globalKernelMatrix, m_trainingKernelMatrix, m_labels, m_numNeighbors));
+                        threads[i] = new Thread(new ExecutionThread(this, m_globalKernelMatrix, m_trainingKernelMatrix, m_labels, m_numNeighbors,
+                                        m_normalize));
                         threads[i].start();
                 }
                 for (int i = 0; i < threads.length; i++) {

@@ -95,9 +95,11 @@ import org.knime.knip.noveltydetection.knfst.RBFKernel;
  */
 public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeModel implements BufferedDataTableHolder {
 
-        private static final int DEFAULT_NUMBER_OF_NEIGHBORS = 100;
+        static final int DEFAULT_NUMBER_OF_NEIGHBORS = 100;
         static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK", "RBF"};
-        private static final boolean DEFAULT_SORT_TABLE = false;
+        static final String DEFAULT_KERNEL = "HIK";
+        static final boolean DEFAULT_SORT_TABLE = false;
+        static final boolean DEFAULT_NORMALIZE = true;
 
         /**
          * Helper
@@ -110,27 +112,32 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
         }
 
         static SettingsModelString createKernelFunctionSelectionModel() {
-                return new SettingsModelString("kernelFunction", "HIK");
+                return new SettingsModelString("kernelFunctionLocalNoveltyScorer", DEFAULT_KERNEL);
         }
 
         static SettingsModelFilterString createColumnSelectionModel() {
-                return new SettingsModelFilterString("Column Filter Local Novelty Scorer");
+                return new SettingsModelFilterString("ColumnFilterLocalNoveltyScorer");
         }
 
         static SettingsModelString createClassColumnSelectionModel() {
-                return new SettingsModelString("Class", "");
+                return new SettingsModelString("ClassLocalNoveltyScorer", "");
         }
 
         static SettingsModelBoolean createSortTableModel() {
-                return new SettingsModelBoolean("SortTable", DEFAULT_SORT_TABLE);
+                return new SettingsModelBoolean("SortTableLocalNoveltyScorer", DEFAULT_SORT_TABLE);
+        }
+
+        static SettingsModelBoolean createNormalizeModel() {
+                return new SettingsModelBoolean("NormalizeLocalNoveltyScorer", DEFAULT_NORMALIZE);
         }
 
         /* SettingsModels */
-        private SettingsModelInteger m_numberOfNeighborsModel = createNumberOfNeighborsModel();
-        private SettingsModelString m_kernelFunctionModel = createKernelFunctionSelectionModel();
+        private SettingsModelInteger m_numberOfNeighbors = createNumberOfNeighborsModel();
+        private SettingsModelString m_kernelFunction = createKernelFunctionSelectionModel();
         private SettingsModelFilterString m_columnSelection = createColumnSelectionModel();
         private SettingsModelString m_classColumn = createClassColumnSelectionModel();
         private SettingsModelBoolean m_sortTable = createSortTableModel();
+        private SettingsModelBoolean m_normalize = createNormalizeModel();
 
         /* Resulting BufferedDataTable */
         private BufferedDataTable m_data;
@@ -200,7 +207,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 ColumnRearranger trainingRearranger = new ColumnRearranger(trainingIn.getDataTableSpec());
                 ColumnRearranger testRearranger = new ColumnRearranger(testIn.getDataTableSpec());
                 List<String> includedCols = m_columnSelection.getIncludeList();
-                int numberOfNeighbors = m_numberOfNeighborsModel.getIntValue();
+                int numberOfNeighbors = m_numberOfNeighbors.getIntValue();
                 final int classColIdx = trainingIn.getDataTableSpec().findColumnIndex(m_classColumn.getStringValue());
 
                 if (m_sortTable.getBooleanValue()) {
@@ -237,7 +244,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
 
                 // Get KernelFunction
                 KernelFunction kernelFunction = null;
-                switch (m_kernelFunctionModel.getStringValue()) {
+                switch (m_kernelFunction.getStringValue()) {
                 case "HIK":
                         kernelFunction = new HIKKernel();
                         break;
@@ -265,7 +272,8 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 int currentRowIdx = 0;
                 final int rowCount = testIn.getRowCount();
 
-                ThreadController threadController = new ThreadController(exec, globalKernelMatrix, trainingKernelMatrix, labels, numberOfNeighbors);
+                ThreadController threadController = new ThreadController(exec, globalKernelMatrix, trainingKernelMatrix, labels, numberOfNeighbors,
+                                m_normalize.getBooleanValue());
                 double[] noveltyScores = threadController.process();
 
                 for (DataRow row : testIn) {
@@ -372,10 +380,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
          */
         @Override
         protected void loadValidatedSettingsFrom(final NodeSettingsRO settings) throws InvalidSettingsException {
-                m_kernelFunctionModel.loadSettingsFrom(settings);
+                m_kernelFunction.loadSettingsFrom(settings);
                 m_columnSelection.loadSettingsFrom(settings);
                 m_classColumn.loadSettingsFrom(settings);
-                m_numberOfNeighborsModel.loadSettingsFrom(settings);
+                m_numberOfNeighbors.loadSettingsFrom(settings);
                 m_sortTable.loadSettingsFrom(settings);
         }
 
@@ -400,10 +408,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
          */
         @Override
         protected void saveSettingsTo(final NodeSettingsWO settings) {
-                m_kernelFunctionModel.saveSettingsTo(settings);
+                m_kernelFunction.saveSettingsTo(settings);
                 m_columnSelection.saveSettingsTo(settings);
                 m_classColumn.saveSettingsTo(settings);
-                m_numberOfNeighborsModel.saveSettingsTo(settings);
+                m_numberOfNeighbors.saveSettingsTo(settings);
                 m_sortTable.saveSettingsTo(settings);
         }
 
@@ -420,10 +428,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
          */
         @Override
         protected void validateSettings(final NodeSettingsRO settings) throws InvalidSettingsException {
-                m_kernelFunctionModel.validateSettings(settings);
+                m_kernelFunction.validateSettings(settings);
                 m_columnSelection.validateSettings(settings);
                 m_classColumn.validateSettings(settings);
-                m_numberOfNeighborsModel.validateSettings(settings);
+                m_numberOfNeighbors.validateSettings(settings);
                 m_sortTable.validateSettings(settings);
         }
 }
