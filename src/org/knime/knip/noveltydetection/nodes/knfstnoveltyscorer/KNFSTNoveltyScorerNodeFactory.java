@@ -48,25 +48,18 @@
  */
 package org.knime.knip.noveltydetection.nodes.knfstnoveltyscorer;
 
-import net.imglib2.type.numeric.RealType;
-
 import org.knime.core.node.NodeDialogPane;
 import org.knime.core.node.NodeFactory;
 import org.knime.core.node.NodeView;
-import org.knime.knip.base.nodes.view.TableCellViewNodeView;
 
 /**
  * {@link NodeFactory} for {@link KNFSTNoveltyScorerNodeModel}
  *
- * @author <a href="mailto:dietzc85@googlemail.com">Christian Dietz</a>
- * @author <a href="mailto:horn_martin@gmx.de">Martin Horn</a>
- * @author <a href="mailto:michael.zinsmaier@googlemail.com">Michael
- *         Zinsmaier</a>
+ * @author <a href="mailto:adrian.nembach@uni-konstanz.de">Adrian Nembach</a>
  *
  * @param <L>
- * @param <T>
  */
-public class KNFSTNoveltyScorerNodeFactory<L extends Number & Comparable<L>, T extends RealType<T>> extends NodeFactory<KNFSTNoveltyScorerNodeModel<L, T>> {
+public class KNFSTNoveltyScorerNodeFactory<L extends Number & Comparable<L>> extends NodeFactory<KNFSTNoveltyScorerNodeModel<L>> {
 
         /**
          * {@inheritDoc}
@@ -80,16 +73,16 @@ public class KNFSTNoveltyScorerNodeFactory<L extends Number & Comparable<L>, T e
          * {@inheritDoc}
          */
         @Override
-        public KNFSTNoveltyScorerNodeModel<L, T> createNodeModel() {
-                return new KNFSTNoveltyScorerNodeModel<L, T>();
+        public KNFSTNoveltyScorerNodeModel<L> createNodeModel() {
+                return new KNFSTNoveltyScorerNodeModel<L>();
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public NodeView<KNFSTNoveltyScorerNodeModel<L, T>> createNodeView(final int viewIndex, final KNFSTNoveltyScorerNodeModel<L, T> nodeModel) {
-                return new TableCellViewNodeView<KNFSTNoveltyScorerNodeModel<L, T>>(nodeModel);
+        public NodeView<KNFSTNoveltyScorerNodeModel<L>> createNodeView(final int viewIndex, final KNFSTNoveltyScorerNodeModel<L> nodeModel) {
+                return null;
         }
 
         /**
@@ -97,7 +90,7 @@ public class KNFSTNoveltyScorerNodeFactory<L extends Number & Comparable<L>, T e
          */
         @Override
         public int getNrNodeViews() {
-                return 1;
+                return 0;
         }
 
         /**

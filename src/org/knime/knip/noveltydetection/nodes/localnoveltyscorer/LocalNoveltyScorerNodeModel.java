@@ -49,9 +49,8 @@
 package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 
 import java.io.File;
+import java.util.Comparator;
 import java.util.List;
-
-import net.imglib2.type.numeric.RealType;
 
 import org.apache.commons.math3.linear.RealMatrix;
 import org.knime.core.data.DataCell;
@@ -65,6 +64,8 @@ import org.knime.core.data.StringValue;
 import org.knime.core.data.container.ColumnRearranger;
 import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
+import org.knime.core.data.def.StringCell;
+import org.knime.core.data.sort.BufferedDataTableSorter;
 import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.BufferedDataTableHolder;
@@ -74,6 +75,7 @@ import org.knime.core.node.InvalidSettingsException;
 import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
 import org.knime.core.node.defaultnodesettings.SettingsModelFilterString;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
@@ -87,18 +89,15 @@ import org.knime.knip.noveltydetection.knfst.alternative.RBFKernel;
 /**
  * Crop BitMasks or parts of images according to a Labeling
  *
- * @author <a href="mailto:dietzc85@googlemail.com">Christian Dietz</a>
- * @author <a href="mailto:horn_martin@gmx.de">Martin Horn</a>
- * @author <a href="mailto:michael.zinsmaier@googlemail.com">Michael
- *         Zinsmaier</a>
+ * @author <a href="mailto:adrian.nembach@uni-konstanz.de">Adrian Nembach</a>
+ * 
  * @param <L>
- * @param <T>
  */
-public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends RealType<T>> extends NodeModel implements BufferedDataTableHolder {
+public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeModel implements BufferedDataTableHolder {
 
-        private static final int DEFAULT_NUMBER_OF_NEIGHBORS = 5;
+        private static final int DEFAULT_NUMBER_OF_NEIGHBORS = 100;
         static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK", "RBF"};
-        private static final boolean DEFAULT_PARALLEL_EXECUTION = true;
+        private static final boolean DEFAULT_SORT_TABLE = false;
 
         /**
          * Helper
@@ -122,11 +121,16 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 return new SettingsModelString("Class", "");
         }
 
+        static SettingsModelBoolean createSortTableModel() {
+                return new SettingsModelBoolean("SortTable", DEFAULT_SORT_TABLE);
+        }
+
         /* SettingsModels */
         private SettingsModelInteger m_numberOfNeighborsModel = createNumberOfNeighborsModel();
         private SettingsModelString m_kernelFunctionModel = createKernelFunctionSelectionModel();
         private SettingsModelFilterString m_columnSelection = createColumnSelectionModel();
         private SettingsModelString m_classColumn = createClassColumnSelectionModel();
+        private SettingsModelBoolean m_sortTable = createSortTableModel();
 
         /* Resulting BufferedDataTable */
         private BufferedDataTable m_data;
@@ -189,7 +193,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
         @SuppressWarnings({})
         protected BufferedDataTable[] execute(final BufferedDataTable[] inData, final ExecutionContext exec) throws Exception {
 
-                final BufferedDataTable trainingIn = inData[0];
+                BufferedDataTable trainingIn = inData[0];
                 final BufferedDataTable testIn = inData[1];
                 final BufferedDataContainer container = exec.createDataContainer(createOutSpec(testIn.getDataTableSpec())[0]);
 
@@ -197,6 +201,21 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 ColumnRearranger testRearranger = new ColumnRearranger(testIn.getDataTableSpec());
                 List<String> includedCols = m_columnSelection.getIncludeList();
                 int numberOfNeighbors = m_numberOfNeighborsModel.getIntValue();
+                final int classColIdx = trainingIn.getDataTableSpec().findColumnIndex(m_classColumn.getStringValue());
+
+                if (m_sortTable.getBooleanValue()) {
+                        BufferedDataTableSorter sorter = new BufferedDataTableSorter(trainingIn, new Comparator<DataRow>() {
+
+                                @Override
+                                public int compare(DataRow arg0, DataRow arg1) {
+                                        String c1 = ((StringCell) arg0.getCell(classColIdx)).getStringValue();
+                                        String c2 = ((StringCell) arg1.getCell(classColIdx)).getStringValue();
+                                        return c1.compareTo(c2);
+                                }
+
+                        });
+                        trainingIn = sorter.sort(exec);
+                }
 
                 if (numberOfNeighbors > trainingIn.getRowCount()) {
                         numberOfNeighbors = trainingIn.getRowCount();
@@ -210,7 +229,6 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 double[][] testData = KernelCalculator.readBufferedDataTable(exec.createColumnRearrangeTable(testIn, testRearranger, exec));
 
                 // Get labels for training Data
-                final int classColIdx = trainingIn.getDataTableSpec().findColumnIndex(m_classColumn.getStringValue());
                 String[] labels = new String[trainingIn.getRowCount()];
                 int l = 0;
                 for (DataRow row : trainingIn) {
@@ -252,11 +270,12 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
 
                 for (DataRow row : testIn) {
 
+                        // Get nearest neighbors according to distance to current sample in kernel feature space
                         /*
                         // Sort training samples according to distance to current sample in kernel feature space
 
                         ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(globalKernelMatrix.getColumn(currentRowIdx));
-                        Arrays.sort(distances, new Comparator<ValueIndexPair>() {
+                        ValueIndexPair[] neighbors = ValueIndexPair.getK(distances, numberOfNeighbors, new Comparator<ValueIndexPair>() {
                                 public int compare(ValueIndexPair o1, ValueIndexPair o2) {
                                         double v1 = o1.getValue();
                                         double v2 = o2.getValue();
@@ -268,12 +287,6 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                                         return res;
                                 }
                         });
-
-                        // get nearest neighbors
-                        ValueIndexPair[] neighbors = new ValueIndexPair[numberOfNeighbors];
-                        for (int i = 0; i < neighbors.length; i++) {
-                                neighbors[i] = distances[i];
-                        }
 
                         // Sort neighbors according to class
                         // NOTE: Since the instances are ordered by class in the original table
@@ -302,11 +315,13 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                                 localLabels[i] = label;
                                 trainingMatrixIndices[i] = neighbors[i].getIndex();
                         }
+                        // get kernel matrix of local training data
                         RealMatrix localTrainingKernelMatrix = trainingKernelMatrix.getSubMatrix(trainingMatrixIndices, trainingMatrixIndices);
 
                         double score = 0;
                         KNFST localModel = null;
 
+                        // train model
                         if (oneClass) {
                                 localModel = new OneClassKNFST(localTrainingKernelMatrix);
                         } else {
@@ -361,6 +376,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 m_columnSelection.loadSettingsFrom(settings);
                 m_classColumn.loadSettingsFrom(settings);
                 m_numberOfNeighborsModel.loadSettingsFrom(settings);
+                m_sortTable.loadSettingsFrom(settings);
         }
 
         /**
@@ -388,6 +404,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 m_columnSelection.saveSettingsTo(settings);
                 m_classColumn.saveSettingsTo(settings);
                 m_numberOfNeighborsModel.saveSettingsTo(settings);
+                m_sortTable.saveSettingsTo(settings);
         }
 
         /**
@@ -407,22 +424,6 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>, T extends Real
                 m_columnSelection.validateSettings(settings);
                 m_classColumn.validateSettings(settings);
                 m_numberOfNeighborsModel.validateSettings(settings);
-        }
-
-        /****************** Private helper methods *************************************************/
-
-        private static double getMin(double[] array) {
-                if (array.length == 0) {
-                        throw new IllegalArgumentException("Array must contain at least one element!");
-                }
-
-                double min = array[0];
-
-                for (double d : array) {
-                        if (d < min) {
-                                min = d;
-                        }
-                }
-                return min;
+                m_sortTable.validateSettings(settings);
         }
 }
