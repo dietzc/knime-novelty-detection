@@ -25,6 +25,6 @@ public class KNFSTLearnerNodeDialog<L extends Comparable<L>> extends DefaultNode
                                 KNFSTLearnerNodeModel.AVAILABLE_KERNELS));
 
                 addDialogComponent(new DialogComponentBoolean(KNFSTLearnerNodeModel.createSortTableModel(),
-                                "Sort table (select only if table is not already sorted by class"));
+                                "Sort Table (select only if table is not already sorted by class)"));
         }
 }

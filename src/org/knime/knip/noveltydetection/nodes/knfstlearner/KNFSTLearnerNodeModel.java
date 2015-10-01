@@ -90,7 +90,6 @@ import org.knime.knip.noveltydetection.knfst.KernelCalculator;
 import org.knime.knip.noveltydetection.knfst.KernelFunction;
 import org.knime.knip.noveltydetection.knfst.MultiClassKNFST;
 import org.knime.knip.noveltydetection.knfst.OneClassKNFST;
-import org.knime.knip.noveltydetection.knfst.RBFKernel;
 
 /**
  * Learns a Kernel Null Foley-Sammon model that can be utilized for Novelty
@@ -103,7 +102,7 @@ import org.knime.knip.noveltydetection.knfst.RBFKernel;
 public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
 
         static final int DATA_INPORT = 0;
-        static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK", "RBF"};
+        static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK"};
         static final String DEFAULT_KERNEL = AVAILABLE_KERNELS[0];
         static final boolean DEFAULT_SORT_TABLES = false;
 
@@ -247,10 +246,6 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                         break;
                 case "EXPHIK":
                         kernelFunction = new EXPHIKKernel();
-                        break;
-                case "RBF":
-                        // Sigma is defaulted to 0.1 for testing
-                        kernelFunction = new RBFKernel(1);
                         break;
                 default:
                         kernelFunction = new HIKKernel();

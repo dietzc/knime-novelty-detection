@@ -31,6 +31,6 @@ public class LocalNoveltyScorerNodeDialog<L extends Comparable<L>> extends Defau
                 addDialogComponent(new DialogComponentBoolean(LocalNoveltyScorerNodeModel.createNormalizeModel(), "Normalize Novelty Scores"));
 
                 addDialogComponent(new DialogComponentBoolean(LocalNoveltyScorerNodeModel.createSortTableModel(),
-                                "Sort training table (only select if not already sorted by class)"));
+                                "Sort Training Table (only select if not already sorted by class)"));
         }
 }

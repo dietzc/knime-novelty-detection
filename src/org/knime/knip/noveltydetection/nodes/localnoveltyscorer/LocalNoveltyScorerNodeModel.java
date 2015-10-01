@@ -84,7 +84,6 @@ import org.knime.knip.noveltydetection.knfst.EXPHIKKernel;
 import org.knime.knip.noveltydetection.knfst.HIKKernel;
 import org.knime.knip.noveltydetection.knfst.KernelCalculator;
 import org.knime.knip.noveltydetection.knfst.KernelFunction;
-import org.knime.knip.noveltydetection.knfst.RBFKernel;
 
 /**
  * Crop BitMasks or parts of images according to a Labeling
@@ -96,7 +95,7 @@ import org.knime.knip.noveltydetection.knfst.RBFKernel;
 public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeModel implements BufferedDataTableHolder {
 
         static final int DEFAULT_NUMBER_OF_NEIGHBORS = 100;
-        static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK", "RBF"};
+        static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK"};
         static final String DEFAULT_KERNEL = "HIK";
         static final boolean DEFAULT_SORT_TABLE = false;
         static final boolean DEFAULT_NORMALIZE = true;
@@ -250,10 +249,6 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                         break;
                 case "EXPHIK":
                         kernelFunction = new EXPHIKKernel();
-                        break;
-                case "RBF":
-                        // Sigma is defaulted to 1 for testing
-                        kernelFunction = new RBFKernel(1);
                         break;
                 default:
                         kernelFunction = new HIKKernel();

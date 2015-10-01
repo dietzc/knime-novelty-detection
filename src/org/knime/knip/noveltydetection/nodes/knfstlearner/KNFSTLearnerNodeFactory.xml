@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE knimeNode PUBLIC "-//UNIKN//DTD KNIME Node 2.0//EN" "http://www.knime.org/Node.dtd">
-<knimeNode type="Learner" icon="cropper.png">
+<knimeNode type="Learner" icon="knfst.png">
 	<name>KNFST-Learner</name>
 	<shortDescription>Learns a KNFST-Model for Novelty Detection</shortDescription>
 
@@ -9,8 +9,8 @@
 			Calculates a Kernel Null Foley-Sammon Transformation that
 			can be used to calculate a novelty score for a test sample in
 			relation to the training samples.
-			IMPORTANT NOTE: The input table must be sorted by class.
-
+			The corresponding source code is a java adaption of the Matlab code provided by Bodesheim et al. 
+			for their paper "Kernel Null Space Methods for Novelty Detection".
 		</intro>
 		<tab name="Options">
 
@@ -26,6 +26,10 @@
 					<li>HIK - Histogram intersection kernel</li>
 					<li>EXPHIK - Exponential variant of the HIK</li>
 				</ul>
+			</option>
+			<option name="Sort Table"> 
+			If you check this option, the input table will be sorted by class prior to calculating the nullspace. 
+			If it already is sorted by class, don't use this option.
 			</option>
 		</tab>
 	</fullDescription>
