@@ -1,4 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.0"?>
 <plugin>
+   <extension
+         point="org.knime.workbench.repository.nodes">
+      <node
+            expert-flag="false"
+            factory-class="org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTLearnerNodeFactory"
+            id="org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTLearnerNodeFactory">
+      </node>
+      <node
+            expert-flag="false"
+            factory-class="org.knime.knip.noveltydetection.nodes.knfstnoveltyscorer.KNFSTNoveltyScorerNodeFactory"
+            id="org.knime.knip.noveltydetection.nodes.knfstnoveltyscorer.KNFSTNoveltyScorerNodeFactory">
+      </node>
+      <node
+            expert-flag="false"
+            factory-class="org.knime.knip.noveltydetection.nodes.localnoveltyscorer.LocalNoveltyScorerNodeFactory"
+            id="org.knime.knip.noveltydetection.nodes.localnoveltyscorer.LocalNoveltyScorerNodeFactory">
+      </node>
+   </extension>
 </plugin>
