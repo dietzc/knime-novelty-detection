@@ -3,6 +3,7 @@ package org.knime.knip.noveltydetection.nodes.knfstlearner;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 
@@ -57,7 +58,6 @@ public class KNFSTPortObjectSpec implements PortObjectSpec {
                 try {
                         out.putNextEntry(new ZipEntry("compatibleFeatures.objectout"));
                         oo = new ObjectOutputStream(new NonClosableOutputStream.Zip(out));
-                        oo.writeUTF(m_compatibleFeatures.getClass().getName());
                         oo.writeInt(m_compatibleFeatures.size());
                         for (String feature : m_compatibleFeatures)
                                 oo.writeUTF(feature);
@@ -86,21 +86,13 @@ public class KNFSTPortObjectSpec implements PortObjectSpec {
                         ZipEntry zentry = in.getNextEntry();
                         assert zentry.getName().equals("compatibleFeatures.objectout");
                         oi = new ObjectInputStream(new NonClosableInputStream.Zip(in));
-                        compatibleFeatures = (List<String>) Class.forName(oi.readUTF()).newInstance();
+                        compatibleFeatures = new ArrayList<String>();
                         int size = oi.readInt();
                         for (int i = 0; i < size; i++)
                                 compatibleFeatures.add(oi.readUTF());
 
                 } catch (IOException ioe) {
 
-                } catch (ClassNotFoundException cnf) {
-
-                } catch (InstantiationException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                } catch (IllegalAccessException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
                 } finally {
                         if (oi != null) {
                                 try {
@@ -113,5 +105,43 @@ public class KNFSTPortObjectSpec implements PortObjectSpec {
 
                 return new KNFSTPortObjectSpec(compatibleFeatures);
 
+        }
+
+        @Override
+        public int hashCode() {
+                final int prime = 31;
+                int result = 1;
+                result = prime * result + ((m_compatibleFeatures == null) ? 0 : m_compatibleFeatures.hashCode());
+                return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+                if (this == obj) {
+                        return true;
+                }
+                if (obj == null) {
+                        return false;
+                }
+                if (!(obj instanceof KNFSTPortObjectSpec)) {
+                        return false;
+                }
+                KNFSTPortObjectSpec other = (KNFSTPortObjectSpec) obj;
+                if (m_compatibleFeatures == null) {
+                        if (other.m_compatibleFeatures != null) {
+                                return false;
+                        }
+                } else if (!m_compatibleFeatures.equals(other.m_compatibleFeatures)) {
+                        return false;
+                }
+                return true;
+        }
+
+        @Override
+        public String toString() {
+                final int maxLen = 10;
+                return "KNFSTPortObjectSpec [m_compatibleFeatures="
+                                + (m_compatibleFeatures != null ? m_compatibleFeatures.subList(0, Math.min(m_compatibleFeatures.size(), maxLen))
+                                                : null) + "]";
         }
 }

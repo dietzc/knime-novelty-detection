@@ -1,5 +1,7 @@
 package org.knime.knip.noveltydetection.knfst;
 
+import java.util.Arrays;
+
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
@@ -96,5 +98,19 @@ public class OneClassKNFST extends KNFST {
                 final RealVector scoresVector = MatrixFunctions.sqrt(MatrixFunctions.rowSums(MatrixFunctions.multiplyElementWise(diff, diff)));
 
                 return new NoveltyScores(scoresVector.toArray(), projectionVectors);
+        }
+
+        @Override
+        public String toString() {
+                final int maxLen = 10;
+                return "OneClassKNFST [m_kernel="
+                                + m_kernel
+                                + ", m_projection="
+                                + m_projection
+                                + ", m_targetPoints="
+                                + m_targetPoints
+                                + ", m_betweenClassDistances="
+                                + (m_betweenClassDistances != null ? Arrays.toString(Arrays.copyOf(m_betweenClassDistances,
+                                                Math.min(m_betweenClassDistances.length, maxLen))) : null) + "]";
         }
 }

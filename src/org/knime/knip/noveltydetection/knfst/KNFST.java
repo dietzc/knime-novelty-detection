@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.MatrixUtils;
@@ -281,5 +282,61 @@ public abstract class KNFST implements Externalizable {
 
         public int getNullspaceDimension() {
                 return m_targetPoints.getColumnDimension();
+        }
+
+        @Override
+        public int hashCode() {
+                final int prime = 31;
+                int result = 1;
+                result = prime * result + Arrays.hashCode(m_betweenClassDistances);
+                result = prime * result + ((m_kernel == null) ? 0 : m_kernel.hashCode());
+                result = prime * result + ((m_projection == null) ? 0 : m_projection.hashCode());
+                result = prime * result + ((m_targetPoints == null) ? 0 : m_targetPoints.hashCode());
+                return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+                if (this == obj) {
+                        return true;
+                }
+                if (obj == null) {
+                        return false;
+                }
+                if (!(obj instanceof KNFST)) {
+                        return false;
+                }
+                KNFST other = (KNFST) obj;
+                if (!Arrays.equals(m_betweenClassDistances, other.m_betweenClassDistances)) {
+                        return false;
+                }
+                if (m_kernel == null) {
+                        if (other.m_kernel != null) {
+                                return false;
+                        }
+                } else if (!m_kernel.equals(other.m_kernel)) {
+                        return false;
+                }
+                if (m_projection == null) {
+                        if (other.m_projection != null) {
+                                return false;
+                        }
+                } else if (!m_projection.equals(other.m_projection)) {
+                        return false;
+                }
+                if (m_targetPoints == null) {
+                        if (other.m_targetPoints != null) {
+                                return false;
+                        }
+                } else if (!m_targetPoints.equals(other.m_targetPoints)) {
+                        return false;
+                }
+                return true;
+        }
+
+        @Override
+        public String toString() {
+                return "KNFST [m_kernel=" + m_kernel + ", m_projection=" + m_projection + ", m_targetPoints=" + m_targetPoints
+                                + ", m_betweenClassDistances=" + Arrays.toString(m_betweenClassDistances) + "]";
         }
 }

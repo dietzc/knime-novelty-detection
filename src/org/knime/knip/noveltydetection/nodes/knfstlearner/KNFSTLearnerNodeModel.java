@@ -133,10 +133,10 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
         private SettingsModelString m_classColumn = createClassColumnSelectionModel();
         private SettingsModelBoolean m_sortTable = createSortTableModel();
 
-        private List<String> m_compatibleFeatures;
+        //        private List<String> m_compatibleFeatures;
 
         /* Resulting PortObject */
-        private KNFSTPortObject m_knfstPortObject;
+        //        private KNFSTPortObject m_knfstPortObject;
 
         /**
          * Constructor SegementCropperNodeModel
@@ -183,7 +183,6 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                                 compatibleFeatures.add(feature);
                         }
                 }
-                m_compatibleFeatures = compatibleFeatures;
 
                 return new PortObjectSpec[] {new KNFSTPortObjectSpec(compatibleFeatures), null};
         }
@@ -233,9 +232,12 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 DataTableSpec tableSpec = data.getDataTableSpec();
 
                 ColumnRearranger cr = new ColumnRearranger(tableSpec);
+                String[] inclColumns = includedColumns.toArray(new String[includedColumns.size()]);
                 cr.keepOnly(includedColumns.toArray(new String[includedColumns.size()]));
 
                 final BufferedDataTable training = exec.createColumnRearrangeTable(data, cr, exec);
+
+                DataRow testRow = training.iterator().next();
 
                 KNFST knfst = null;
 
@@ -264,7 +266,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                         knfst = new MultiClassKNFST(kernelCalculator, labels);
                 }
 
-                m_knfstPortObject = new KNFSTPortObject(knfst, m_compatibleFeatures);
+                //                m_knfstPortObject = new KNFSTPortObject(knfst, includedColumns);
 
                 // Write target points into table
                 String[] uniqueLabels = new HashSet<String>(Arrays.asList(labels)).toArray(new String[0]);
@@ -295,7 +297,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 }
                 container.close();
 
-                return new PortObject[] {m_knfstPortObject, container.getTable()};
+                return new PortObject[] {new KNFSTPortObject(knfst, includedColumns), container.getTable()};
         }
 
         /**

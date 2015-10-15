@@ -4,6 +4,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.commons.math3.linear.MatrixUtils;
@@ -206,5 +207,55 @@ public class KernelCalculator implements Externalizable {
                         for (double col : row)
                                 out.writeDouble(col);
 
+        }
+
+        @Override
+        public int hashCode() {
+                final int prime = 31;
+                int result = 1;
+                result = prime * result + m_colCount;
+                result = prime * result + ((m_kernelFunction == null) ? 0 : m_kernelFunction.hashCode());
+                result = prime * result + m_rowCount;
+                result = prime * result + Arrays.hashCode(m_trainingData);
+                return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+                if (this == obj) {
+                        return true;
+                }
+                if (obj == null) {
+                        return false;
+                }
+                if (!(obj instanceof KernelCalculator)) {
+                        return false;
+                }
+                KernelCalculator other = (KernelCalculator) obj;
+                if (m_colCount != other.m_colCount) {
+                        return false;
+                }
+                if (m_kernelFunction == null) {
+                        if (other.m_kernelFunction != null) {
+                                return false;
+                        }
+                } else if (!m_kernelFunction.equals(other.m_kernelFunction)) {
+                        return false;
+                }
+                if (m_rowCount != other.m_rowCount) {
+                        return false;
+                }
+                if (!Arrays.deepEquals(m_trainingData, other.m_trainingData)) {
+                        return false;
+                }
+                return true;
+        }
+
+        @Override
+        public String toString() {
+                final int maxLen = 10;
+                return "KernelCalculator [m_trainingData="
+                                + (m_trainingData != null ? Arrays.asList(m_trainingData).subList(0, Math.min(m_trainingData.length, maxLen)) : null)
+                                + ", m_rowCount=" + m_rowCount + ", m_colCount=" + m_colCount + ", m_kernelFunction=" + m_kernelFunction + "]";
         }
 }

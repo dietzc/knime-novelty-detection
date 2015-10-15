@@ -67,4 +67,19 @@ public class HIKKernel implements KernelFunction {
         public void writeExternal(ObjectOutput arg0) throws IOException {
                 // nothing to do here
         }
+
+        @Override
+        public String toString() {
+                return "HIKKernel []";
+        }
+
+        public boolean equals(Object object) {
+                if (object == null) {
+                        return false;
+                }
+                if (object instanceof HIKKernel) {
+                        return true;
+                }
+                return false;
+        }
 }

@@ -3,6 +3,7 @@ package org.knime.knip.noveltydetection.nodes.knfstlearner;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 
@@ -67,7 +68,6 @@ public class KNFSTPortObject implements PortObject {
                         oo = new ObjectOutputStream(new NonClosableOutputStream.Zip(out));
                         oo.writeUTF(m_knfstModel.getClass().getName());
                         m_knfstModel.writeExternal(oo);
-                        oo.writeUTF(m_compatibleFeatures.getClass().getName());
                         oo.writeInt(m_compatibleFeatures.size());
                         for (String feature : m_compatibleFeatures)
                                 oo.writeUTF(feature);
@@ -96,7 +96,7 @@ public class KNFSTPortObject implements PortObject {
                         oi = new ObjectInputStream(new NonClosableInputStream.Zip(in));
                         knfst = (KNFST) Class.forName(oi.readUTF()).newInstance();
                         knfst.readExternal(oi);
-                        compatibleFeatures = (List<String>) Class.forName(oi.readUTF()).newInstance();
+                        compatibleFeatures = new ArrayList<String>();
                         int size = oi.readInt();
                         for (int i = 0; i < size; i++)
                                 compatibleFeatures.add(oi.readUTF());
@@ -139,6 +139,49 @@ public class KNFSTPortObject implements PortObject {
         public JComponent[] getViews() {
                 // TODO Auto-generated method stub
                 return null;
+        }
+
+        @Override
+        public int hashCode() {
+                final int prime = 31;
+                int result = 1;
+                result = prime * result + ((m_compatibleFeatures == null) ? 0 : m_compatibleFeatures.hashCode());
+                result = prime * result + ((m_knfstModel == null) ? 0 : m_knfstModel.hashCode());
+                return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+                if (this == obj) {
+                        return true;
+                }
+                if (obj == null) {
+                        return false;
+                }
+                if (!(obj instanceof KNFSTPortObject)) {
+                        return false;
+                }
+                KNFSTPortObject other = (KNFSTPortObject) obj;
+                if (m_compatibleFeatures == null) {
+                        if (other.m_compatibleFeatures != null) {
+                                return false;
+                        }
+                } else if (!m_compatibleFeatures.equals(other.m_compatibleFeatures)) {
+                        return false;
+                }
+                if (m_knfstModel == null) {
+                        if (other.m_knfstModel != null) {
+                                return false;
+                        }
+                } else if (!m_knfstModel.equals(other.m_knfstModel)) {
+                        return false;
+                }
+                return true;
+        }
+
+        @Override
+        public String toString() {
+                return "KNFSTPortObject [m_knfstModel=" + m_knfstModel + ", m_compatibleFeatures=" + m_compatibleFeatures + "]";
         }
 
 }
