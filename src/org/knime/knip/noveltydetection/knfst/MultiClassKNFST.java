@@ -123,7 +123,7 @@ public class MultiClassKNFST extends KNFST {
                 super.readExternal(arg0);
 
                 // read labels
-                String[] m_labels = new String[arg0.readInt()];
+                m_labels = new String[arg0.readInt()];
                 for (int l = 0; l < m_labels.length; l++) {
                         m_labels[l] = arg0.readUTF();
                 }
