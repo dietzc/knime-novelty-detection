@@ -109,7 +109,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
         /**
          * Helper
          *
-         * @return SettingsModel to store img column
+         * @return SettingsModel
          */
         static SettingsModelString createKernelFunctionSelectionModel() {
                 return new SettingsModelString("kernelFunction", DEFAULT_KERNEL);
@@ -136,7 +136,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
         //        private List<String> m_compatibleFeatures;
 
         /* Resulting PortObject */
-        //        private KNFSTPortObject m_knfstPortObject;
+        private KNFSTPortObject m_knfstPortObject;
 
         /**
          * Constructor SegementCropperNodeModel
@@ -232,12 +232,9 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 DataTableSpec tableSpec = data.getDataTableSpec();
 
                 ColumnRearranger cr = new ColumnRearranger(tableSpec);
-                String[] inclColumns = includedColumns.toArray(new String[includedColumns.size()]);
                 cr.keepOnly(includedColumns.toArray(new String[includedColumns.size()]));
 
                 final BufferedDataTable training = exec.createColumnRearrangeTable(data, cr, exec);
-
-                DataRow testRow = training.iterator().next();
 
                 KNFST knfst = null;
 
@@ -266,7 +263,8 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                         knfst = new MultiClassKNFST(kernelCalculator, labels);
                 }
 
-                //                m_knfstPortObject = new KNFSTPortObject(knfst, includedColumns);
+                KNFSTPortObjectSpec knfstSpec = new KNFSTPortObjectSpec(includedColumns);
+                m_knfstPortObject = new KNFSTPortObject(knfst, knfstSpec);
 
                 // Write target points into table
                 String[] uniqueLabels = new HashSet<String>(Arrays.asList(labels)).toArray(new String[0]);
@@ -297,7 +295,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 }
                 container.close();
 
-                return new PortObject[] {new KNFSTPortObject(knfst, includedColumns), container.getTable()};
+                return new PortObject[] {m_knfstPortObject, container.getTable()};
         }
 
         /**
@@ -356,4 +354,5 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 m_classColumn.validateSettings(settings);
                 m_sortTable.validateSettings(settings);
         }
+
 }

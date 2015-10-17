@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipEntry;
 
@@ -11,16 +12,24 @@ import javax.swing.JComponent;
 
 import org.knime.core.data.util.NonClosableInputStream;
 import org.knime.core.data.util.NonClosableOutputStream;
-import org.knime.core.node.port.PortObjectSpec;
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.ModelContentRO;
+import org.knime.core.node.ModelContentWO;
+import org.knime.core.node.port.AbstractSimplePortObjectSpec;
 import org.knime.core.node.port.PortObjectSpecZipInputStream;
 import org.knime.core.node.port.PortObjectSpecZipOutputStream;
 
-public class KNFSTPortObjectSpec implements PortObjectSpec {
+public class KNFSTPortObjectSpec extends AbstractSimplePortObjectSpec {
 
-        private List<String> m_compatibleFeatures;
+        private String[] m_compatibleFeatures;
+
+        private static final String CFGKEY_COMPATIBLEFEATURES = "CompatibleFeatures";
 
         public KNFSTPortObjectSpec(List<String> compatibleFeatures) {
-                m_compatibleFeatures = compatibleFeatures;
+                m_compatibleFeatures = compatibleFeatures.toArray(new String[compatibleFeatures.size()]);
+        }
+
+        public KNFSTPortObjectSpec() {
         }
 
         @Override
@@ -30,26 +39,7 @@ public class KNFSTPortObjectSpec implements PortObjectSpec {
         }
 
         public List<String> getCompatibleFeatures() {
-                return m_compatibleFeatures;
-        }
-
-        public static PortObjectSpecSerializer<KNFSTPortObjectSpec> getPortObjectSpecSerializer() {
-                return new PortObjectSpecSerializer<KNFSTPortObjectSpec>() {
-
-                        @Override
-                        public void savePortObjectSpec(KNFSTPortObjectSpec portObjectSpec, PortObjectSpecZipOutputStream out) throws IOException {
-                                // TODO Auto-generated method stub
-                                portObjectSpec.save(out);
-
-                        }
-
-                        @Override
-                        public KNFSTPortObjectSpec loadPortObjectSpec(PortObjectSpecZipInputStream in) throws IOException {
-                                // TODO Auto-generated method stub
-                                return load(in);
-                        }
-
-                };
+                return Arrays.asList(m_compatibleFeatures);
         }
 
         private void save(PortObjectSpecZipOutputStream out) {
@@ -58,7 +48,7 @@ public class KNFSTPortObjectSpec implements PortObjectSpec {
                 try {
                         out.putNextEntry(new ZipEntry("compatibleFeatures.objectout"));
                         oo = new ObjectOutputStream(new NonClosableOutputStream.Zip(out));
-                        oo.writeInt(m_compatibleFeatures.size());
+                        oo.writeInt(m_compatibleFeatures.length);
                         for (String feature : m_compatibleFeatures)
                                 oo.writeUTF(feature);
 
@@ -73,6 +63,12 @@ public class KNFSTPortObjectSpec implements PortObjectSpec {
                                 }
                         }
                 }
+
+        }
+
+        @Override
+        protected void save(ModelContentWO model) {
+                model.addStringArray(CFGKEY_COMPATIBLEFEATURES, m_compatibleFeatures);
 
         }
 
@@ -104,6 +100,12 @@ public class KNFSTPortObjectSpec implements PortObjectSpec {
                 }
 
                 return new KNFSTPortObjectSpec(compatibleFeatures);
+
+        }
+
+        @Override
+        protected void load(ModelContentRO model) throws InvalidSettingsException {
+                m_compatibleFeatures = model.getStringArray(CFGKEY_COMPATIBLEFEATURES);
 
         }
 
@@ -141,7 +143,8 @@ public class KNFSTPortObjectSpec implements PortObjectSpec {
         public String toString() {
                 final int maxLen = 10;
                 return "KNFSTPortObjectSpec [m_compatibleFeatures="
-                                + (m_compatibleFeatures != null ? m_compatibleFeatures.subList(0, Math.min(m_compatibleFeatures.size(), maxLen))
-                                                : null) + "]";
+                                + (m_compatibleFeatures != null ? Arrays.asList(m_compatibleFeatures).subList(0,
+                                                Math.min(m_compatibleFeatures.length, maxLen)) : null) + "]";
         }
+
 }
