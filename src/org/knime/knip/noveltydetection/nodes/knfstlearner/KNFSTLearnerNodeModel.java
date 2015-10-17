@@ -109,7 +109,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
         /**
          * Helper
          *
-         * @return SettingsModel to store img column
+         * @return SettingsModel
          */
         static SettingsModelString createKernelFunctionSelectionModel() {
                 return new SettingsModelString("kernelFunction", DEFAULT_KERNEL);
@@ -133,7 +133,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
         private SettingsModelString m_classColumn = createClassColumnSelectionModel();
         private SettingsModelBoolean m_sortTable = createSortTableModel();
 
-        private List<String> m_compatibleFeatures;
+        //        private List<String> m_compatibleFeatures;
 
         /* Resulting PortObject */
         private KNFSTPortObject m_knfstPortObject;
@@ -183,7 +183,6 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                                 compatibleFeatures.add(feature);
                         }
                 }
-                m_compatibleFeatures = compatibleFeatures;
 
                 return new PortObjectSpec[] {new KNFSTPortObjectSpec(compatibleFeatures), null};
         }
@@ -264,7 +263,8 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                         knfst = new MultiClassKNFST(kernelCalculator, labels);
                 }
 
-                m_knfstPortObject = new KNFSTPortObject(knfst, m_compatibleFeatures);
+                KNFSTPortObjectSpec knfstSpec = new KNFSTPortObjectSpec(includedColumns);
+                m_knfstPortObject = new KNFSTPortObject(knfst, knfstSpec);
 
                 // Write target points into table
                 String[] uniqueLabels = new HashSet<String>(Arrays.asList(labels)).toArray(new String[0]);
@@ -354,4 +354,5 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 m_classColumn.validateSettings(settings);
                 m_sortTable.validateSettings(settings);
         }
+
 }

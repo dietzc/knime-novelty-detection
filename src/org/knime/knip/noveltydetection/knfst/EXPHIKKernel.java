@@ -41,4 +41,9 @@ public class EXPHIKKernel implements KernelFunction {
 
         }
 
+        @Override
+        public String toString() {
+                return "EXPHIKKernel []";
+        }
+
 }

@@ -3,6 +3,7 @@ package org.knime.knip.noveltydetection.knfst;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Arrays;
 
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -139,5 +140,47 @@ public class MultiClassKNFST extends KNFST {
                 for (String label : m_labels)
                         arg0.writeUTF(label);
 
+        }
+
+        @Override
+        public int hashCode() {
+                final int prime = 31;
+                int result = super.hashCode();
+                result = prime * result + Arrays.hashCode(m_labels);
+                return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+                if (this == obj) {
+                        return true;
+                }
+                if (!super.equals(obj)) {
+                        return false;
+                }
+                if (!(obj instanceof MultiClassKNFST)) {
+                        return false;
+                }
+                MultiClassKNFST other = (MultiClassKNFST) obj;
+                if (!Arrays.equals(m_labels, other.m_labels)) {
+                        return false;
+                }
+                return true;
+        }
+
+        @Override
+        public String toString() {
+                final int maxLen = 10;
+                return "MultiClassKNFST [m_labels="
+                                + (m_labels != null ? Arrays.asList(m_labels).subList(0, Math.min(m_labels.length, maxLen)) : null)
+                                + ", m_kernel="
+                                + m_kernel
+                                + ", m_projection="
+                                + m_projection
+                                + ", m_targetPoints="
+                                + m_targetPoints
+                                + ", m_betweenClassDistances="
+                                + (m_betweenClassDistances != null ? Arrays.toString(Arrays.copyOf(m_betweenClassDistances,
+                                                Math.min(m_betweenClassDistances.length, maxLen))) : null) + "]";
         }
 }
