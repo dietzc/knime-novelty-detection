@@ -80,10 +80,10 @@ import org.knime.core.node.defaultnodesettings.SettingsModelFilterString;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
-import org.knime.knip.noveltydetection.knfst.EXPHIKKernel;
-import org.knime.knip.noveltydetection.knfst.HIKKernel;
-import org.knime.knip.noveltydetection.knfst.KernelCalculator;
-import org.knime.knip.noveltydetection.knfst.KernelFunction;
+import org.knime.knip.noveltydetection.kernel.EXPHIKKernel;
+import org.knime.knip.noveltydetection.kernel.HIKKernel;
+import org.knime.knip.noveltydetection.kernel.KernelCalculator;
+import org.knime.knip.noveltydetection.kernel.KernelFunction;
 
 /**
  * Crop BitMasks or parts of images according to a Labeling
