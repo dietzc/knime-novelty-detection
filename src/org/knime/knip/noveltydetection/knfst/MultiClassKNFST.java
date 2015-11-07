@@ -8,7 +8,9 @@ import java.util.Arrays;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.knime.core.data.DataRow;
 import org.knime.core.node.BufferedDataTable;
+import org.knime.knip.noveltydetection.kernel.KernelCalculator;
 
 public class MultiClassKNFST extends KNFST {
 
@@ -88,6 +90,12 @@ public class MultiClassKNFST extends KNFST {
         @Override
         public NoveltyScores scoreTestData(RealMatrix kernelMatrix) {
                 // TODO Auto-generated method stub
+                return score(kernelMatrix);
+        }
+
+        @Override
+        public NoveltyScores scoreTestData(DataRow testInstance) {
+                RealMatrix kernelMatrix = m_kernel.kernelize(testInstance);
                 return score(kernelMatrix);
         }
 
