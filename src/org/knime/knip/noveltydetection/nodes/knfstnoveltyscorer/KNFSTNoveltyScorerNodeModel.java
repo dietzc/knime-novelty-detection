@@ -52,16 +52,11 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math3.linear.RealMatrix;
-import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnSpec;
 import org.knime.core.data.DataColumnSpecCreator;
-import org.knime.core.data.DataRow;
 import org.knime.core.data.DataTableSpec;
 import org.knime.core.data.container.ColumnRearranger;
-import org.knime.core.data.def.DefaultRow;
 import org.knime.core.data.def.DoubleCell;
-import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.BufferedDataTableHolder;
 import org.knime.core.node.ExecutionContext;
@@ -75,7 +70,6 @@ import org.knime.core.node.port.PortObject;
 import org.knime.core.node.port.PortObjectSpec;
 import org.knime.core.node.port.PortType;
 import org.knime.knip.noveltydetection.knfst.KNFST;
-import org.knime.knip.noveltydetection.knfst.NoveltyScores;
 import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObject;
 import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObjectSpec;
 
@@ -186,68 +180,103 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 cr.keepOnly(includedFeatures.toArray(new String[includedFeatures.size()]));
                 final BufferedDataTable testData = exec.createColumnRearrangeTable(data, cr, exec);
 
-                NoveltyScores noveltyScores = knfst.scoreTestData(testData);
-
-                int additionalCells = 0;
+                boolean appendNoveltyScore = m_appendNoveltyScore.getBooleanValue();
+                boolean appendNullspaceCoordinates = m_appendNullspaceCoordinates.getBooleanValue();
+                double normalizer = getMin(knfst.getBetweenClassDistances());
 
                 ArrayList<DataColumnSpec> outColSpecs = new ArrayList<DataColumnSpec>();
 
-                double[] scores = null;
-                if (m_appendNoveltyScore.getBooleanValue()) {
+                if (appendNoveltyScore) {
                         outColSpecs.add(new DataColumnSpecCreator("Novelty Score", DoubleCell.TYPE).createSpec());
-                        scores = noveltyScores.getScores();
-
-                        if (m_normalize.getBooleanValue()) {
-                                // add options for different normalizations
-                                double normalizer = getMin(knfst.getBetweenClassDistances());
-
-                                // normalize scores
-                                for (int i = 0; i < scores.length; i++) {
-                                        scores[i] = scores[i] / normalizer;
-                                }
-                        }
-                        additionalCells++;
                 }
-
-                RealMatrix nullspaceCoordinates = null;
-                if (m_appendNullspaceCoordinates.getBooleanValue()) {
-                        nullspaceCoordinates = noveltyScores.getCoordinates();
-                        additionalCells += nullspaceCoordinates.getColumnDimension();
-                        for (int d = 0; d < nullspaceCoordinates.getColumnDimension(); d++) {
-                                outColSpecs.add(new DataColumnSpecCreator("Dim" + d, DoubleCell.TYPE).createSpec());
+                if (appendNullspaceCoordinates) {
+                        for (int i = 0; i < knfst.getNullspaceDimension(); i++) {
+                                outColSpecs.add(new DataColumnSpecCreator("Dim " + i, DoubleCell.TYPE).createSpec());
                         }
                 }
 
-                final BufferedDataContainer container = exec.createDataContainer(new DataTableSpec(tableSpec, new DataTableSpec(outColSpecs
-                                .toArray(new DataColumnSpec[outColSpecs.size()]))));
-
-                int scoreIterator = 0;
-
-                for (DataRow row : data) {
-                        DataCell[] cells = new DataCell[row.getNumCells() + additionalCells];
-                        int c = 0;
-                        for (; c < row.getNumCells(); c++) {
-                                cells[c] = row.getCell(c);
-                        }
-
-                        if (m_appendNoveltyScore.getBooleanValue()) {
-                                cells[c++] = new DoubleCell(scores[scoreIterator]);
-                        }
-
-                        if (m_appendNullspaceCoordinates.getBooleanValue()) {
-
-                                for (int i = 0; i < nullspaceCoordinates.getColumnDimension(); i++) {
-                                        cells[c + i] = new DoubleCell(nullspaceCoordinates.getRow(scoreIterator)[i]);
-                                }
-                        }
-                        scoreIterator++;
-
-                        container.addRowToTable(new DefaultRow(row.getKey(), cells));
+                if (outColSpecs.isEmpty()) {
+                        throw new InvalidSettingsException("At least one option must be selected.");
                 }
 
-                container.close();
-                m_data = container.getTable();
+                ColumnRearranger outColRearranger = new ColumnRearranger(testData.getDataTableSpec());
+                outColRearranger.append(new KNFSTNoveltyScorerCellFactory(outColSpecs.toArray(new DataColumnSpec[outColSpecs.size()]), knfst,
+                                appendNoveltyScore, appendNullspaceCoordinates, normalizer));
+
+                BufferedDataTable result = exec.createColumnRearrangeTable(testData, outColRearranger, exec.createSubProgress(0.8));
+
+                ColumnRearranger resRearranger = new ColumnRearranger(result.getSpec());
+                String[] colNames = new String[outColSpecs.size()];
+                for (int i = 0; i < colNames.length; i++) {
+                        colNames[i] = outColSpecs.get(i).getName();
+                }
+                resRearranger.keepOnly(colNames);
+                m_data = exec.createJoinedTable(data, exec.createColumnRearrangeTable(result, resRearranger, exec.createSubProgress(0)),
+                                exec.createSubProgress(0.1));
+
                 return new BufferedDataTable[] {m_data};
+                //                NoveltyScores noveltyScores = knfst.scoreTestData(testData);
+                //
+                //                int additionalCells = 0;
+                //
+                //                ArrayList<DataColumnSpec> outColSpecs = new ArrayList<DataColumnSpec>();
+                //
+                //                double[] scores = null;
+                //                if (m_appendNoveltyScore.getBooleanValue()) {
+                //                        outColSpecs.add(new DataColumnSpecCreator("Novelty Score", DoubleCell.TYPE).createSpec());
+                //                        scores = noveltyScores.getScores();
+                //
+                //                        if (m_normalize.getBooleanValue()) {
+                //                                // add options for different normalizations
+                //                                double normalizer = getMin(knfst.getBetweenClassDistances());
+                //
+                //                                // normalize scores
+                //                                for (int i = 0; i < scores.length; i++) {
+                //                                        scores[i] = scores[i] / normalizer;
+                //                                }
+                //                        }
+                //                        additionalCells++;
+                //                }
+                //
+                //                RealMatrix nullspaceCoordinates = null;
+                //                if (m_appendNullspaceCoordinates.getBooleanValue()) {
+                //                        nullspaceCoordinates = noveltyScores.getCoordinates();
+                //                        additionalCells += nullspaceCoordinates.getColumnDimension();
+                //                        for (int d = 0; d < nullspaceCoordinates.getColumnDimension(); d++) {
+                //                                outColSpecs.add(new DataColumnSpecCreator("Dim" + d, DoubleCell.TYPE).createSpec());
+                //                        }
+                //                }
+                //
+                //                final BufferedDataContainer container = exec.createDataContainer(new DataTableSpec(tableSpec, new DataTableSpec(outColSpecs
+                //                                .toArray(new DataColumnSpec[outColSpecs.size()]))));
+                //
+                //                int scoreIterator = 0;
+                //
+                //                for (DataRow row : data) {
+                //                        DataCell[] cells = new DataCell[row.getNumCells() + additionalCells];
+                //                        int c = 0;
+                //                        for (; c < row.getNumCells(); c++) {
+                //                                cells[c] = row.getCell(c);
+                //                        }
+                //
+                //                        if (m_appendNoveltyScore.getBooleanValue()) {
+                //                                cells[c++] = new DoubleCell(scores[scoreIterator]);
+                //                        }
+                //
+                //                        if (m_appendNullspaceCoordinates.getBooleanValue()) {
+                //
+                //                                for (int i = 0; i < nullspaceCoordinates.getColumnDimension(); i++) {
+                //                                        cells[c + i] = new DoubleCell(nullspaceCoordinates.getRow(scoreIterator)[i]);
+                //                                }
+                //                        }
+                //                        scoreIterator++;
+                //
+                //                        container.addRowToTable(new DefaultRow(row.getKey(), cells));
+                //                }
+                //
+                //                container.close();
+                //                m_data = container.getTable();
+                //                return new BufferedDataTable[] {m_data};
         }
 
         /**

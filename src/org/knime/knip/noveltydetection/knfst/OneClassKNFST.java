@@ -5,7 +5,9 @@ import java.util.Arrays;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.knime.core.data.DataRow;
 import org.knime.core.node.BufferedDataTable;
+import org.knime.knip.noveltydetection.kernel.KernelCalculator;
 
 public class OneClassKNFST extends KNFST {
 
@@ -83,6 +85,12 @@ public class OneClassKNFST extends KNFST {
 
         @Override
         public NoveltyScores scoreTestData(RealMatrix kernelMatrix) {
+                return score(kernelMatrix);
+        }
+
+        @Override
+        public NoveltyScores scoreTestData(DataRow testInstance) {
+                final RealMatrix kernelMatrix = m_kernel.kernelize(testInstance);
                 return score(kernelMatrix);
         }
 

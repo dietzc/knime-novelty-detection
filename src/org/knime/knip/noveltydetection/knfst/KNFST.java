@@ -11,7 +11,9 @@ import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.knime.core.data.DataRow;
 import org.knime.core.node.BufferedDataTable;
+import org.knime.knip.noveltydetection.kernel.KernelCalculator;
 
 public abstract class KNFST implements Externalizable {
         protected KernelCalculator m_kernel;
@@ -28,6 +30,8 @@ public abstract class KNFST implements Externalizable {
         }
 
         public abstract NoveltyScores scoreTestData(BufferedDataTable test);
+
+        public abstract NoveltyScores scoreTestData(DataRow testInstance);
 
         public abstract NoveltyScores scoreTestData(double[][] test);
 

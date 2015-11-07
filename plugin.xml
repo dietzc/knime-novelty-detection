@@ -18,5 +18,10 @@
             factory-class="org.knime.knip.noveltydetection.nodes.localnoveltyscorer.LocalNoveltyScorerNodeFactory"
             id="org.knime.knip.noveltydetection.nodes.localnoveltyscorer.LocalNoveltyScorerNodeFactory">
       </node>
+      <node
+            expert-flag="false"
+            factory-class="org.knime.knip.noveltydetection.nodes.kernelcalculator.KernelCalculatorNodeFactory"
+            id="org.knime.knip.noveltydetection.nodes.kernelcalculator.KernelCalculatorNodeFactory">
+      </node>
    </extension>
 </plugin>
