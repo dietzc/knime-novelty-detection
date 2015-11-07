@@ -76,6 +76,7 @@ import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
+import org.knime.core.node.defaultnodesettings.SettingsModelDouble;
 import org.knime.core.node.defaultnodesettings.SettingsModelFilterString;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
@@ -84,6 +85,8 @@ import org.knime.knip.noveltydetection.kernel.EXPHIKKernel;
 import org.knime.knip.noveltydetection.kernel.HIKKernel;
 import org.knime.knip.noveltydetection.kernel.KernelCalculator;
 import org.knime.knip.noveltydetection.kernel.KernelFunction;
+import org.knime.knip.noveltydetection.kernel.PolynomialKernel;
+import org.knime.knip.noveltydetection.kernel.RBFKernel;
 
 /**
  * Crop BitMasks or parts of images according to a Labeling
@@ -99,6 +102,15 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
         static final String DEFAULT_KERNEL = "HIK";
         static final boolean DEFAULT_SORT_TABLE = false;
         static final boolean DEFAULT_NORMALIZE = true;
+        static final double DEFAULT_SIGMA = 0.5;
+        static final double DEFAULT_GAMMA = 1.0;
+        static final double DEFAULT_BIAS = 2.0;
+        static final double DEFAULT_POWER = 3.0;
+
+        public static final String CFG_KEY_SIGMA = "sigmaRBF";
+        public static final String CFG_KEY_GAMMA = "gammaPolynomial";
+        public static final String CFG_KEY_BIAS = "biasPolynomial";
+        public static final String CFG_KEY_POWER = "powerPolynomial";
 
         /**
          * Helper
@@ -130,6 +142,30 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 return new SettingsModelBoolean("NormalizeLocalNoveltyScorer", DEFAULT_NORMALIZE);
         }
 
+        static SettingsModelDouble createRBFSigmaModel() {
+                SettingsModelDouble sm = new SettingsModelDouble(CFG_KEY_SIGMA, DEFAULT_SIGMA);
+                sm.setEnabled(false);
+                return sm;
+        }
+
+        static SettingsModelDouble createPolynomialGammaModel() {
+                SettingsModelDouble sm = new SettingsModelDouble(CFG_KEY_GAMMA, DEFAULT_GAMMA);
+                sm.setEnabled(false);
+                return sm;
+        }
+
+        static SettingsModelDouble createPolynomialBiasModel() {
+                SettingsModelDouble sm = new SettingsModelDouble(CFG_KEY_BIAS, DEFAULT_BIAS);
+                sm.setEnabled(false);
+                return sm;
+        }
+
+        static SettingsModelDouble createPolynomialPower() {
+                SettingsModelDouble sm = new SettingsModelDouble(CFG_KEY_POWER, DEFAULT_POWER);
+                sm.setEnabled(false);
+                return sm;
+        }
+
         /* SettingsModels */
         private SettingsModelInteger m_numberOfNeighbors = createNumberOfNeighborsModel();
         private SettingsModelString m_kernelFunction = createKernelFunctionSelectionModel();
@@ -137,6 +173,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
         private SettingsModelString m_classColumn = createClassColumnSelectionModel();
         private SettingsModelBoolean m_sortTable = createSortTableModel();
         private SettingsModelBoolean m_normalize = createNormalizeModel();
+        private SettingsModelDouble m_sigma = createRBFSigmaModel();
+        private SettingsModelDouble m_gamma = createPolynomialGammaModel();
+        private SettingsModelDouble m_bias = createPolynomialBiasModel();
+        private SettingsModelDouble m_power = createPolynomialPower();
 
         /* Resulting BufferedDataTable */
         private BufferedDataTable m_data;
@@ -249,6 +289,12 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                         break;
                 case "EXPHIK":
                         kernelFunction = new EXPHIKKernel();
+                        break;
+                case "RBF":
+                        kernelFunction = new RBFKernel(m_sigma.getDoubleValue());
+                        break;
+                case "POLYNOMIAL":
+                        kernelFunction = new PolynomialKernel(m_gamma.getDoubleValue(), m_bias.getDoubleValue(), m_power.getDoubleValue());
                         break;
                 default:
                         kernelFunction = new HIKKernel();
