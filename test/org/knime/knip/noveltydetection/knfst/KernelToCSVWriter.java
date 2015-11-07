@@ -6,6 +6,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.knime.knip.noveltydetection.kernel.HIKKernel;
+import org.knime.knip.noveltydetection.kernel.KernelCalculator;
+
 /*
  * This class is only used to provide Kernel values for testing the knfst projection against
  * the Matlab implementation of the paper
