@@ -309,14 +309,9 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 final KernelCalculator kernelCalculator = new KernelCalculator(training, kernelFunction);
 
                 if (oneClass) {
-                        try {
-                                knfst = new OneClassKNFST(kernelCalculator);
-                        } catch (Exception e) {
-                                e.printStackTrace();
-                                throw e;
-                        }
+                        knfst = new OneClassKNFST(kernelCalculator, knfstExec);
                 } else {
-                        knfst = new MultiClassKNFST(kernelCalculator, labels);
+                        knfst = new MultiClassKNFST(kernelCalculator, labels, knfstExec);
                 }
 
                 KNFSTPortObjectSpec knfstSpec = new KNFSTPortObjectSpec(includedColumns);
