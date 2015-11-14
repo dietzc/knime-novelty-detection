@@ -9,7 +9,7 @@ import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.knime.core.data.DataRow;
-import org.knime.core.node.BufferedDataTable;
+import org.knime.core.node.ExecutionMonitor;
 import org.knime.knip.noveltydetection.kernel.KernelCalculator;
 
 public class MultiClassKNFST extends KNFST {
@@ -20,17 +20,21 @@ public class MultiClassKNFST extends KNFST {
 
         }
 
-        public MultiClassKNFST(KernelCalculator kernel, String[] labels) {
+        public MultiClassKNFST(KernelCalculator kernel, String[] labels, ExecutionMonitor progMon) throws KNFSTException {
                 super(kernel);
                 m_labels = labels;
 
-                RealMatrix kernelMatrix = kernel.kernelize();
+                ExecutionMonitor kernelProgMon = progMon.createSubProgress(0.3);
+                ExecutionMonitor nullspaceProgMon = progMon.createSubProgress(0.7);
+                RealMatrix kernelMatrix = kernel.kernelize(kernelProgMon);
 
                 // obtain unique class labels
                 ClassWrapper[] classes = ClassWrapper.classes(labels);
 
                 // calculate projection of KNFST
                 this.m_projection = projection(kernelMatrix, labels);
+
+                nullspaceProgMon.setProgress(1.0, "Finished calculating nullspace");
 
                 // calculate target points ( = projections of training data into the null space)
                 m_targetPoints = MatrixUtils.createRealMatrix(classes.length, m_projection.getColumnDimension());
@@ -48,7 +52,7 @@ public class MultiClassKNFST extends KNFST {
 
         }
 
-        public MultiClassKNFST(RealMatrix kernelMatrix, String[] labels) {
+        public MultiClassKNFST(RealMatrix kernelMatrix, String[] labels) throws KNFSTException {
                 m_labels = labels;
                 // obtain unique class labels
                 ClassWrapper[] classes = ClassWrapper.classes(labels);
@@ -71,21 +75,21 @@ public class MultiClassKNFST extends KNFST {
                 m_betweenClassDistances = MatrixFunctions.calculateRowVectorDistances(m_targetPoints);
         }
 
-        @Override
-        public NoveltyScores scoreTestData(BufferedDataTable test) {
-                // calculate nxm kernel matrix containing similarities between n training samples and m test samples
-                RealMatrix kernelMatrix = m_kernel.kernelize(test);
+        //                @Override
+        //                public NoveltyScores scoreTestData(BufferedDataTable test, ) {
+        //                        // calculate nxm kernel matrix containing similarities between n training samples and m test samples
+        //                        RealMatrix kernelMatrix = m_kernel.kernelize(test);
+        //        
+        //                        return score(kernelMatrix);
+        //                }
 
-                return score(kernelMatrix);
-        }
-
-        @Override
-        public NoveltyScores scoreTestData(double[][] test) {
-                // calculate nxm kernel matrix containing similarities between n training samples and m test samples
-                RealMatrix kernelMatrix = m_kernel.kernelize(test);
-
-                return score(kernelMatrix);
-        }
+        //        @Override
+        //        public NoveltyScores scoreTestData(double[][] test) {
+        //                // calculate nxm kernel matrix containing similarities between n training samples and m test samples
+        //                RealMatrix kernelMatrix = m_kernel.kernelize(test);
+        //
+        //                return score(kernelMatrix);
+        //        }
 
         @Override
         public NoveltyScores scoreTestData(RealMatrix kernelMatrix) {
