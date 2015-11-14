@@ -26,6 +26,8 @@
 				<ul>
 					<li>HIK - Histogram intersection kernel</li>
 					<li>EXPHIK - Exponential variant of the HIK</li>
+					<li>RBF - Radial basis function kernel (with parameter sigma)</li>
+					<li>Polynomial - Polynomial kernel (with parameters gamma, bias and power)</li>
 				</ul>
 			</option>
 			<option name="Number of Neighbors"> 
