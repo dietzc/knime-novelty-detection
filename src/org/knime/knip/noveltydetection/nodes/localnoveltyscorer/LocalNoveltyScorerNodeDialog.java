@@ -69,8 +69,6 @@ public class LocalNoveltyScorerNodeDialog<L extends Comparable<L>> extends Defau
                         }
                 });
 
-                addDialogComponent(new DialogComponentStringSelection(kernelType, "Kernel", kernelNames));
-
                 addDialogComponent(new DialogComponentNumberEdit(rbfSigma, "Sigma: "));
 
                 addDialogComponent(new DialogComponentNumberEdit(polynomialGamma, "Gamma: "));
