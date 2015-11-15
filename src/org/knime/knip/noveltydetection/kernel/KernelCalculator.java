@@ -7,7 +7,6 @@ import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import org.apache.commons.math3.linear.MatrixUtils;
@@ -25,7 +24,7 @@ public class KernelCalculator implements Externalizable {
         static final int DEFAULT_NUM_CORES = 4;
 
         public enum KernelType {
-                HIK("HIK"), EXPHIK("EXPHIK"), RBF("RBF"), POLYNOMIAL("Polynomial");
+                RBF("RBF"), HIK("HIK"), EXPHIK("EXPHIK"), Polynomial("Polynomial");
 
                 private final String m_name;
 
@@ -70,11 +69,11 @@ public class KernelCalculator implements Externalizable {
         /* Returns kernel matrix containing similarities of the training data
          * Output:  mxm matrix containing similarities of the training data
          */
-        public RealMatrix kernelize(ExecutionMonitor progMon) {
+        public RealMatrix kernelize(ExecutionMonitor progMon) throws Exception {
                 return calculateKernelMatrix(m_trainingData, m_trainingData, progMon);
         }
 
-        public RealMatrix kernelize(BufferedDataTable trainingData, BufferedDataTable testData, ExecutionMonitor progMon) {
+        public RealMatrix kernelize(BufferedDataTable trainingData, BufferedDataTable testData, ExecutionMonitor progMon) throws Exception {
                 return calculateKernelMatrix(readBufferedDataTable(trainingData), readBufferedDataTable(testData), progMon);
         }
 
@@ -82,7 +81,7 @@ public class KernelCalculator implements Externalizable {
          * Parameters:  testData:   BufferedDataTable containing the test data
          * Output:  nxm matrix containing the similarities of n test samples with m training samples
          */
-        public RealMatrix kernelize(BufferedDataTable testData, ExecutionMonitor progMon) {
+        public RealMatrix kernelize(BufferedDataTable testData, ExecutionMonitor progMon) throws Exception {
                 return calculateKernelMatrix(m_trainingData, readBufferedDataTable(testData), progMon);
         }
 
@@ -105,11 +104,11 @@ public class KernelCalculator implements Externalizable {
                 return data;
         }
 
-        public RealMatrix kernelize(double[][] testData, ExecutionMonitor progMon) {
+        public RealMatrix kernelize(double[][] testData, ExecutionMonitor progMon) throws Exception {
                 return calculateKernelMatrix(m_trainingData, testData, progMon);
         }
 
-        public RealMatrix kernelize(double[][] trainingData, double[][] testData, ExecutionMonitor progMon) {
+        public RealMatrix kernelize(double[][] trainingData, double[][] testData, ExecutionMonitor progMon) throws Exception {
 
                 return calculateKernelMatrix(trainingData, testData, progMon);
         }
@@ -166,7 +165,7 @@ public class KernelCalculator implements Externalizable {
                 return MatrixUtils.createRealMatrix(result);
         }
 
-        public RealMatrix calculateKernelMatrix(final double[][] training, final double[][] test, final ExecutionMonitor progMon) {
+        public RealMatrix calculateKernelMatrix(final double[][] training, final double[][] test, final ExecutionMonitor progMon) throws Exception {
 
                 final ThreadPool pool = KNIMEConstants.GLOBAL_THREAD_POOL;
                 int procCount = (int) (Runtime.getRuntime().availableProcessors() * (2.0 / 3));
@@ -187,6 +186,16 @@ public class KernelCalculator implements Externalizable {
                                         Future<?>[] threads = new Future<?>[numberOfRunnables];
                                         double progCounter = 0;
                                         for (int i = 0; i < numberOfRunnables; i++) {
+                                                try {
+                                                        progMon.checkCanceled();
+                                                } catch (Exception e) {
+                                                        for (int j = 0; j < i; j++) {
+                                                                if (threads[j] != null) {
+                                                                        threads[j].cancel(true);
+                                                                }
+                                                        }
+                                                        throw e;
+                                                }
                                                 semaphore.acquire();
                                                 threads[i] = pool.enqueue(kct[i]);
                                                 progMon.setProgress(progCounter / (2 * numberOfRunnables), "Kernel calculation started (" + i + "/"
@@ -194,6 +203,16 @@ public class KernelCalculator implements Externalizable {
                                                 progCounter += 1;
                                         }
                                         for (int i = 0; i < numberOfRunnables; i++) {
+                                                try {
+                                                        progMon.checkCanceled();
+                                                } catch (Exception e) {
+                                                        for (int j = 0; j < numberOfRunnables; j++) {
+                                                                if (threads[j] != null) {
+                                                                        threads[j].cancel(true);
+                                                                }
+                                                        }
+                                                        throw e;
+                                                }
                                                 semaphore.acquire();
                                                 threads[i].get();
                                                 semaphore.release();
@@ -205,9 +224,8 @@ public class KernelCalculator implements Externalizable {
                                 }
 
                         });
-                } catch (ExecutionException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                } catch (Exception e) {
+                        throw e;
                 }
 
                 return result;

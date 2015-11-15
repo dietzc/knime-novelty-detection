@@ -15,7 +15,7 @@ public class OneClassKNFST extends KNFST {
 
         }
 
-        public OneClassKNFST(final KernelCalculator kernel, ExecutionMonitor progMon) throws KNFSTException {
+        public OneClassKNFST(final KernelCalculator kernel, ExecutionMonitor progMon) throws Exception {
                 super(kernel);
 
                 ExecutionMonitor kernelProgMon = progMon.createSubProgress(0.3);
@@ -36,8 +36,9 @@ public class OneClassKNFST extends KNFST {
                         labels[l] = (l == n) ? "0" : "1";
 
                 // get model parameters
+                nullspaceProgMon.setMessage("Calculating nullspace projection");
                 final RealMatrix projection = projection(k, labels);
-                nullspaceProgMon.setProgress(1.0, "Finished calculating nullspace");
+                nullspaceProgMon.setProgress(1.0, "Finished calculating nullspace projection");
                 final int[] indices = new int[n];
                 for (int i = 0; i < n; i++)
                         indices[i] = i;

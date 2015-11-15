@@ -20,7 +20,7 @@ public class MultiClassKNFST extends KNFST {
 
         }
 
-        public MultiClassKNFST(KernelCalculator kernel, String[] labels, ExecutionMonitor progMon) throws KNFSTException {
+        public MultiClassKNFST(KernelCalculator kernel, String[] labels, ExecutionMonitor progMon) throws Exception {
                 super(kernel);
                 m_labels = labels;
 
@@ -32,9 +32,10 @@ public class MultiClassKNFST extends KNFST {
                 ClassWrapper[] classes = ClassWrapper.classes(labels);
 
                 // calculate projection of KNFST
+                nullspaceProgMon.setMessage("Calculating nullspace projection");
                 this.m_projection = projection(kernelMatrix, labels);
 
-                nullspaceProgMon.setProgress(1.0, "Finished calculating nullspace");
+                nullspaceProgMon.setProgress(1.0, "Finished calculating nullspace projection");
 
                 // calculate target points ( = projections of training data into the null space)
                 m_targetPoints = MatrixUtils.createRealMatrix(classes.length, m_projection.getColumnDimension());

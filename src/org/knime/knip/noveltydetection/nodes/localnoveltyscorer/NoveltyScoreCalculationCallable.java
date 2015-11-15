@@ -20,6 +20,8 @@ public class NoveltyScoreCalculationCallable implements Callable<Double> {
         private final String[] m_labels;
         private final boolean m_normalize;
 
+        private Exception m_exception;
+
         public NoveltyScoreCalculationCallable(int index, Semaphore semaphore, int numNeighbors, RealMatrix trainingKernelMatrix,
                         RealMatrix globalKernelMatrix, String[] labels, boolean normalize) {
                 m_index = index;
@@ -87,22 +89,32 @@ public class NoveltyScoreCalculationCallable implements Callable<Double> {
                 double score = 0;
                 KNFST localModel = null;
 
-                if (oneClass) {
-                        localModel = new OneClassKNFST(localTrainingKernelMatrix);
-                } else {
-                        localModel = new MultiClassKNFST(localTrainingKernelMatrix, localLabels);
+                try {
+                        if (oneClass) {
+                                localModel = new OneClassKNFST(localTrainingKernelMatrix);
+                        } else {
+                                localModel = new MultiClassKNFST(localTrainingKernelMatrix, localLabels);
+                        }
+
+                        score = localModel.scoreTestData(
+                                        m_globalKernelMatrix.getColumnMatrix(m_index).getSubMatrix(trainingMatrixIndices, new int[] {0})).getScores()[0];
+
+                        // normalize novelty score
+                        if (m_normalize) {
+                                double normalizer = Tools.getMin(localModel.getBetweenClassDistances());
+                                score = score / normalizer;
+                        }
+                } catch (Exception e) {
+                        m_exception = e;
+                } finally {
+                        m_semaphore.release();
                 }
-
-                score = localModel.scoreTestData(m_globalKernelMatrix.getColumnMatrix(m_index).getSubMatrix(trainingMatrixIndices, new int[] {0}))
-                                .getScores()[0];
-
-                // normalize novelty score
-                if (m_normalize) {
-                        double normalizer = Tools.getMin(localModel.getBetweenClassDistances());
-                        score = score / normalizer;
-                }
-
-                m_semaphore.release();
                 return score;
+        }
+
+        public void ok() throws Exception {
+                if (m_exception != null) {
+                        throw m_exception;
+                }
         }
 }

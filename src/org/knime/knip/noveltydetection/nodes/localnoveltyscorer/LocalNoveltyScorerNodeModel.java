@@ -83,6 +83,7 @@ import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.knip.noveltydetection.kernel.EXPHIKKernel;
 import org.knime.knip.noveltydetection.kernel.HIKKernel;
 import org.knime.knip.noveltydetection.kernel.KernelCalculator;
+import org.knime.knip.noveltydetection.kernel.KernelCalculator.KernelType;
 import org.knime.knip.noveltydetection.kernel.KernelFunction;
 import org.knime.knip.noveltydetection.kernel.PolynomialKernel;
 import org.knime.knip.noveltydetection.kernel.RBFKernel;
@@ -98,18 +99,13 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
 
         static final int DEFAULT_NUMBER_OF_NEIGHBORS = 100;
         static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK"};
-        static final String DEFAULT_KERNEL = "HIK";
+        static final KernelType DEFAULT_KERNEL = KernelType.RBF;
         static final boolean DEFAULT_SORT_TABLE = false;
         static final boolean DEFAULT_NORMALIZE = true;
         static final double DEFAULT_SIGMA = 0.5;
         static final double DEFAULT_GAMMA = 1.0;
         static final double DEFAULT_BIAS = 2.0;
         static final double DEFAULT_POWER = 3.0;
-
-        public static final String CFG_KEY_SIGMA = "sigmaRBF";
-        public static final String CFG_KEY_GAMMA = "gammaPolynomial";
-        public static final String CFG_KEY_BIAS = "biasPolynomial";
-        public static final String CFG_KEY_POWER = "powerPolynomial";
 
         /**
          * Helper
@@ -122,7 +118,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
         }
 
         static SettingsModelString createKernelFunctionSelectionModel() {
-                return new SettingsModelString("kernelFunctionLocalNoveltyScorer", DEFAULT_KERNEL);
+                return new SettingsModelString("kernelFunctionLocalNoveltyScorer", DEFAULT_KERNEL.toString());
         }
 
         static SettingsModelFilterString createColumnSelectionModel() {
@@ -142,25 +138,25 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
         }
 
         static SettingsModelDouble createRBFSigmaModel() {
-                SettingsModelDouble sm = new SettingsModelDouble(CFG_KEY_SIGMA, DEFAULT_SIGMA);
-                sm.setEnabled(false);
+                SettingsModelDouble sm = new SettingsModelDouble("sigmaRBF", DEFAULT_SIGMA);
+                //                sm.setEnabled(false);
                 return sm;
         }
 
         static SettingsModelDouble createPolynomialGammaModel() {
-                SettingsModelDouble sm = new SettingsModelDouble(CFG_KEY_GAMMA, DEFAULT_GAMMA);
+                SettingsModelDouble sm = new SettingsModelDouble("gammaPolynomial", DEFAULT_GAMMA);
                 sm.setEnabled(false);
                 return sm;
         }
 
         static SettingsModelDouble createPolynomialBiasModel() {
-                SettingsModelDouble sm = new SettingsModelDouble(CFG_KEY_BIAS, DEFAULT_BIAS);
+                SettingsModelDouble sm = new SettingsModelDouble("biasPolynomial", DEFAULT_BIAS);
                 sm.setEnabled(false);
                 return sm;
         }
 
         static SettingsModelDouble createPolynomialPower() {
-                SettingsModelDouble sm = new SettingsModelDouble(CFG_KEY_POWER, DEFAULT_POWER);
+                SettingsModelDouble sm = new SettingsModelDouble("powerPolynomial", DEFAULT_POWER);
                 sm.setEnabled(false);
                 return sm;
         }
@@ -292,21 +288,22 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
 
                 // Get KernelFunction
                 KernelFunction kernelFunction = null;
-                switch (m_kernelFunction.getStringValue()) {
-                case "HIK":
+                KernelType kernelType = KernelType.valueOf(m_kernelFunction.getStringValue());
+                switch (kernelType) {
+                case HIK:
                         kernelFunction = new HIKKernel();
                         break;
-                case "EXPHIK":
+                case EXPHIK:
                         kernelFunction = new EXPHIKKernel();
                         break;
-                case "RBF":
+                case RBF:
                         kernelFunction = new RBFKernel(m_sigma.getDoubleValue());
                         break;
-                case "POLYNOMIAL":
+                case Polynomial:
                         kernelFunction = new PolynomialKernel(m_gamma.getDoubleValue(), m_bias.getDoubleValue(), m_power.getDoubleValue());
                         break;
                 default:
-                        kernelFunction = new HIKKernel();
+                        kernelFunction = new RBFKernel(m_sigma.getDoubleValue());
                 }
 
                 exec.checkCanceled();
