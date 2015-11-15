@@ -12,7 +12,6 @@ import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.knime.core.data.DataRow;
-import org.knime.core.node.BufferedDataTable;
 import org.knime.knip.noveltydetection.kernel.KernelCalculator;
 
 public abstract class KNFST implements Externalizable {
@@ -29,15 +28,15 @@ public abstract class KNFST implements Externalizable {
                 m_kernel = kernel;
         }
 
-        public abstract NoveltyScores scoreTestData(BufferedDataTable test);
+        //        public abstract NoveltyScores scoreTestData(BufferedDataTable test);
 
         public abstract NoveltyScores scoreTestData(DataRow testInstance);
 
-        public abstract NoveltyScores scoreTestData(double[][] test);
+        //        public abstract NoveltyScores scoreTestData(double[][] test);
 
         public abstract NoveltyScores scoreTestData(RealMatrix kernelMatrix);
 
-        public static RealMatrix projection(final RealMatrix kernelMatrix, final String[] labels) {
+        public static RealMatrix projection(final RealMatrix kernelMatrix, final String[] labels) throws KNFSTException {
 
                 ClassWrapper[] classes = ClassWrapper.classes(labels);
 
@@ -55,51 +54,6 @@ public abstract class KNFST implements Externalizable {
                 // calculate weights of orthonormal basis in kernel space
                 final RealMatrix centeredK = centerKernelMatrix(kernelMatrix);
 
-                /* Test for equality
-                RealMatrix matrixI = MatrixUtils.createRealIdentityMatrix(kernelMatrix.getColumnDimension());
-                RealMatrix matrixM = MatrixFunctions.ones(kernelMatrix.getColumnDimension(), kernelMatrix.getColumnDimension()).scalarMultiply(
-                                1 / kernelMatrix.getColumnDimension());
-                RealMatrix matrixImM = matrixI.subtract(matrixM);
-                final RealMatrix centeredK = (matrixImM.transpose()).multiply(kernelMatrix).multiply(matrixImM);
-                */
-
-                /*
-                EigenDecomposition eig = new EigenDecomposition(centeredK);
-                final double[] basisValues = eig.getRealEigenvalues();
-
-                
-                // get number and position of nonzero basis values
-                final ArrayList<Integer> indices = new ArrayList<Integer>();
-                for (int i = 0; i < basisValues.length; i++) {
-                        if (basisValues[i] > 1e-12) {
-                                indices.add(i);
-                        }
-                }
-
-                // convert ArrayList<Integer> indices into int[] intIndices
-                // create Array with nonzero resized basis values
-                final int[] colIndices = new int[indices.size()];
-                final double[] nonzeroBasisValues = new double[indices.size()];
-                for (int i = 0; i < indices.size(); i++) {
-                        nonzeroBasisValues[i] = 1 / Math.sqrt(basisValues[indices.get(i)]);
-                        colIndices[i] = indices.get(i);
-                }
-                final int[] rowIndices = new int[eig.getV().getRowDimension()];
-                for (int i = 0; i < eig.getV().getRowDimension(); i++)
-                        rowIndices[i] = i;
-
-                // get basis vectors with nonzero basis values
-                RealMatrix basisvecs = eig.getV().getSubMatrix(rowIndices, colIndices);
-                
-                
-                // create diagonal matrix with nonzero basis values
-                final RealMatrix basisvecsValues = MatrixUtils.createRealDiagonalMatrix(nonzeroBasisValues);
-
-                //test.printMatrix(basisvecs);
-                //test.printMatrix(basisvecsValues);
-
-                basisvecs = basisvecs.multiply(basisvecsValues);
-                 */
                 EigenDecomposition eig = new EigenDecomposition(centeredK);
                 double[] eigVals = eig.getRealEigenvalues();
                 ArrayList<Integer> nonZeroEigValIndices = new ArrayList<Integer>();
@@ -108,11 +62,16 @@ public abstract class KNFST implements Externalizable {
                                 nonZeroEigValIndices.add(i);
                         }
                 }
-                double[] nonZeroEigVals = new double[nonZeroEigValIndices.size()];
 
                 int eigIterator = 0;
                 RealMatrix eigVecs = eig.getV();
-                RealMatrix basisvecs = MatrixUtils.createRealMatrix(eigVecs.getRowDimension(), nonZeroEigValIndices.size());
+                RealMatrix basisvecs = null;
+                try {
+                        basisvecs = MatrixUtils.createRealMatrix(eigVecs.getRowDimension(), nonZeroEigValIndices.size());
+                } catch (Exception e) {
+                        throw new KNFSTException("Something went wrong. Try different parameters or a different kernel.");
+                }
+
                 for (Integer index : nonZeroEigValIndices) {
                         double normalizer = 1 / Math.sqrt(eigVals[index]);
                         RealVector basisVec = eigVecs.getColumnVector(eigIterator).mapMultiply(normalizer);
@@ -145,7 +104,6 @@ public abstract class KNFST implements Externalizable {
                 RealMatrix eigenvecs = MatrixFunctions.nullspace(T);
 
                 if (eigenvecs == null) {
-                        System.out.println("No Nullspace!");
                         EigenDecomposition eigenComp = new EigenDecomposition(T);
                         double[] eigenvals = eigenComp.getRealEigenvalues();
                         eigenvecs = eigenComp.getV();
@@ -158,7 +116,6 @@ public abstract class KNFST implements Externalizable {
                 //test.printMatrix(eigenvecs);
 
                 // calculate null space projection
-                //DoubleMatrix proj = DoubleMatrix.eye(M.getColumns()).sub(M).mmul(basisvecs);
                 RealMatrix proj = ((I.subtract(M)).multiply(basisvecs)).multiply(eigenvecs);
 
                 return proj;

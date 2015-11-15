@@ -5,6 +5,7 @@ import java.util.Comparator;
 
 import org.apache.commons.math3.linear.RealMatrix;
 import org.knime.knip.noveltydetection.knfst.KNFST;
+import org.knime.knip.noveltydetection.knfst.KNFSTException;
 import org.knime.knip.noveltydetection.knfst.MultiClassKNFST;
 import org.knime.knip.noveltydetection.knfst.OneClassKNFST;
 
@@ -88,9 +89,19 @@ public class ExecutionThread implements Runnable {
                         KNFST localModel = null;
 
                         if (oneClass) {
-                                localModel = new OneClassKNFST(localTrainingKernelMatrix);
+                                try {
+                                        localModel = new OneClassKNFST(localTrainingKernelMatrix);
+                                } catch (KNFSTException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                }
                         } else {
-                                localModel = new MultiClassKNFST(localTrainingKernelMatrix, localLabels);
+                                try {
+                                        localModel = new MultiClassKNFST(localTrainingKernelMatrix, localLabels);
+                                } catch (KNFSTException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                }
                         }
 
                         score = localModel.scoreTestData(

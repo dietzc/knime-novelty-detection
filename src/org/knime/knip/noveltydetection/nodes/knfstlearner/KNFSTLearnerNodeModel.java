@@ -87,6 +87,7 @@ import org.knime.core.node.port.PortType;
 import org.knime.knip.noveltydetection.kernel.EXPHIKKernel;
 import org.knime.knip.noveltydetection.kernel.HIKKernel;
 import org.knime.knip.noveltydetection.kernel.KernelCalculator;
+import org.knime.knip.noveltydetection.kernel.KernelCalculator.KernelType;
 import org.knime.knip.noveltydetection.kernel.KernelFunction;
 import org.knime.knip.noveltydetection.kernel.PolynomialKernel;
 import org.knime.knip.noveltydetection.kernel.RBFKernel;
@@ -104,14 +105,10 @@ import org.knime.knip.noveltydetection.knfst.OneClassKNFST;
  */
 public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
 
-        public static final String CFG_KEY_SIGMA = "sigmaRBF";
-        public static final String CFG_KEY_GAMMA = "gammaPolynomial";
-        public static final String CFG_KEY_BIAS = "biasPolynomial";
         public static final String CFG_KEY_POWER = "powerPolynomial";
 
         static final int DATA_INPORT = 0;
-        static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK"};
-        static final String DEFAULT_KERNEL = AVAILABLE_KERNELS[0];
+        static final String DEFAULT_KERNEL = KernelType.RBF.toString();
         static final boolean DEFAULT_SORT_TABLES = false;
         static final double DEFAULT_SIGMA = 0.5;
         static final double DEFAULT_GAMMA = 1.0;
@@ -140,25 +137,25 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
         }
 
         static SettingsModelDouble createRBFSigmaModel() {
-                SettingsModelDouble sm = new SettingsModelDouble(CFG_KEY_SIGMA, DEFAULT_SIGMA);
-                sm.setEnabled(false);
+                SettingsModelDouble sm = new SettingsModelDouble("sigmaRBF", DEFAULT_SIGMA);
+                //                sm.setEnabled(false);
                 return sm;
         }
 
         static SettingsModelDouble createPolynomialGammaModel() {
-                SettingsModelDouble sm = new SettingsModelDouble(CFG_KEY_GAMMA, DEFAULT_GAMMA);
+                SettingsModelDouble sm = new SettingsModelDouble("gammaPolynomial", DEFAULT_GAMMA);
                 sm.setEnabled(false);
                 return sm;
         }
 
         static SettingsModelDouble createPolynomialBiasModel() {
-                SettingsModelDouble sm = new SettingsModelDouble(CFG_KEY_BIAS, DEFAULT_BIAS);
+                SettingsModelDouble sm = new SettingsModelDouble("biasPolynomial", DEFAULT_BIAS);
                 sm.setEnabled(false);
                 return sm;
         }
 
         static SettingsModelDouble createPolynomialPower() {
-                SettingsModelDouble sm = new SettingsModelDouble(CFG_KEY_POWER, DEFAULT_POWER);
+                SettingsModelDouble sm = new SettingsModelDouble("powerPolynomial", DEFAULT_POWER);
                 sm.setEnabled(false);
                 return sm;
         }
@@ -182,7 +179,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
          * Constructor SegementCropperNodeModel
          */
         public KNFSTLearnerNodeModel() {
-                super(new PortType[] {BufferedDataTable.TYPE}, new PortType[] {KNFSTPortObject.TYPE, BufferedDataTable.TYPE});
+                super(new PortType[] {BufferedDataTable.TYPE}, new PortType[] {BufferedDataTable.TYPE, KNFSTPortObject.TYPE});
         }
 
         /**
@@ -224,7 +221,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                         }
                 }
 
-                return new PortObjectSpec[] {new KNFSTPortObjectSpec(compatibleFeatures), null};
+                return new PortObjectSpec[] {null, new KNFSTPortObjectSpec(compatibleFeatures)};
         }
 
         /**
@@ -288,35 +285,30 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 final BufferedDataTable training = exec.createColumnRearrangeTable(data, cr, exec);
 
                 KNFST knfst = null;
-
                 KernelFunction kernelFunction = null;
-                switch (kernelFunctionName) {
-                case "HIK":
+                KernelType kernelType = KernelType.valueOf(kernelFunctionName);
+                switch (kernelType) {
+                case HIK:
                         kernelFunction = new HIKKernel();
                         break;
-                case "EXPHIK":
+                case EXPHIK:
                         kernelFunction = new EXPHIKKernel();
                         break;
-                case "RBF":
-                        kernelFunction = new RBFKernel(0.1);
+                case RBF:
+                        kernelFunction = new RBFKernel(m_sigma.getDoubleValue());
                         break;
-                case "Polynomial":
-                        kernelFunction = new PolynomialKernel(1, 2, 3);
+                case Polynomial:
+                        kernelFunction = new PolynomialKernel(m_gamma.getDoubleValue(), m_bias.getDoubleValue(), m_power.getDoubleValue());
                 default:
-                        kernelFunction = new HIKKernel();
+                        kernelFunction = new RBFKernel(m_sigma.getDoubleValue());
                 }
 
                 final KernelCalculator kernelCalculator = new KernelCalculator(training, kernelFunction);
 
                 if (oneClass) {
-                        try {
-                                knfst = new OneClassKNFST(kernelCalculator);
-                        } catch (Exception e) {
-                                e.printStackTrace();
-                                throw e;
-                        }
+                        knfst = new OneClassKNFST(kernelCalculator, knfstExec);
                 } else {
-                        knfst = new MultiClassKNFST(kernelCalculator, labels);
+                        knfst = new MultiClassKNFST(kernelCalculator, labels, knfstExec);
                 }
 
                 KNFSTPortObjectSpec knfstSpec = new KNFSTPortObjectSpec(includedColumns);
@@ -352,12 +344,12 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                         cells[cells.length - 1] = new StringCell(uniqueLabels[r]);
                         container.addRowToTable(new DefaultRow(new RowKey("tar_" + r), cells));
 
-                        tableExec.setProgress(((double) r) / nullspaceDim, "Writing target nullspace coordinates - class " + r + " of "
-                                        + nullspaceDim);
+                        tableExec.setProgress(((double) r) / nullspaceDim,
+                                        "Writing target nullspace coordinates - class " + r + " of " + nullspaceDim);
                 }
                 container.close();
 
-                return new PortObject[] {m_knfstPortObject, container.getTable()};
+                return new PortObject[] {container.getTable(), m_knfstPortObject};
         }
 
         /**

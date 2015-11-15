@@ -7,7 +7,6 @@ import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import org.apache.commons.math3.linear.MatrixUtils;
@@ -17,6 +16,7 @@ import org.knime.core.data.DataCell;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DoubleValue;
 import org.knime.core.node.BufferedDataTable;
+import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.KNIMEConstants;
 import org.knime.core.util.ThreadPool;
 
@@ -24,7 +24,7 @@ public class KernelCalculator implements Externalizable {
         static final int DEFAULT_NUM_CORES = 4;
 
         public enum KernelType {
-                HIK("HIK"), EXPHIK("EXPHIK"), RBF("RBF"), POLYNOMIAL("Polynomial");
+                RBF("RBF"), HIK("HIK"), EXPHIK("EXPHIK"), Polynomial("Polynomial");
 
                 private final String m_name;
 
@@ -62,35 +62,35 @@ public class KernelCalculator implements Externalizable {
                 m_kernelFunction = kernelFunction;
         }
 
-        public KernelCalculator(KernelFunction kernelFunction) {
-                m_kernelFunction = kernelFunction;
-        }
+        //        public KernelCalculator(KernelFunction kernelFunction) {
+        //                m_kernelFunction = kernelFunction;
+        //        }
 
         /* Returns kernel matrix containing similarities of the training data
          * Output:  mxm matrix containing similarities of the training data
          */
-        public RealMatrix kernelize() {
-                return calculateKernelMatrix(m_trainingData, m_trainingData);
+        public RealMatrix kernelize(ExecutionMonitor progMon) throws Exception {
+                return calculateKernelMatrix(m_trainingData, m_trainingData, progMon);
         }
 
-        public RealMatrix kernelize(BufferedDataTable trainingData, BufferedDataTable testData) {
-                return calculateKernelMatrix(readBufferedDataTable(trainingData), readBufferedDataTable(testData));
+        public RealMatrix kernelize(BufferedDataTable trainingData, BufferedDataTable testData, ExecutionMonitor progMon) throws Exception {
+                return calculateKernelMatrix(readBufferedDataTable(trainingData), readBufferedDataTable(testData), progMon);
         }
 
         /* Returns kernel matrix containing similarities of test data with training data
          * Parameters:  testData:   BufferedDataTable containing the test data
          * Output:  nxm matrix containing the similarities of n test samples with m training samples
          */
-        public RealMatrix kernelize(BufferedDataTable testData) {
-                return calculateKernelMatrix(m_trainingData, readBufferedDataTable(testData));
+        public RealMatrix kernelize(BufferedDataTable testData, ExecutionMonitor progMon) throws Exception {
+                return calculateKernelMatrix(m_trainingData, readBufferedDataTable(testData), progMon);
         }
 
         public RealMatrix kernelize(DataRow testInstance) {
-                return calculateKernelMatrix(m_trainingData, readDataRow(testInstance));
+                return calculateKernelVector(m_trainingData, readDataRow(testInstance), m_kernelFunction);
         }
 
-        private double[][] readDataRow(DataRow row) {
-                double[][] data = new double[1][row.getNumCells()];
+        private double[] readDataRow(DataRow row) {
+                double[] data = new double[row.getNumCells()];
                 for (int i = 0; i < row.getNumCells(); i++) {
                         DataCell cell = row.getCell(i);
                         if (cell.isMissing()) {
@@ -98,19 +98,19 @@ public class KernelCalculator implements Externalizable {
                         } else if (!cell.getType().isCompatible(DoubleValue.class)) {
                                 throw new IllegalArgumentException("Only numerical data types are currently supported.");
                         } else {
-                                data[0][i] = ((DoubleValue) cell).getDoubleValue();
+                                data[i] = ((DoubleValue) cell).getDoubleValue();
                         }
                 }
                 return data;
         }
 
-        public RealMatrix kernelize(double[][] testData) {
-                return calculateKernelMatrix(m_trainingData, testData);
+        public RealMatrix kernelize(double[][] testData, ExecutionMonitor progMon) throws Exception {
+                return calculateKernelMatrix(m_trainingData, testData, progMon);
         }
 
-        public RealMatrix kernelize(double[][] trainingData, double[][] testData) {
+        public RealMatrix kernelize(double[][] trainingData, double[][] testData, ExecutionMonitor progMon) throws Exception {
 
-                return calculateKernelMatrix(trainingData, testData);
+                return calculateKernelMatrix(trainingData, testData, progMon);
         }
 
         public int getNumTrainingSamples() {
@@ -165,7 +165,7 @@ public class KernelCalculator implements Externalizable {
                 return MatrixUtils.createRealMatrix(result);
         }
 
-        public RealMatrix calculateKernelMatrix(final double[][] training, final double[][] test) {
+        public RealMatrix calculateKernelMatrix(final double[][] training, final double[][] test, final ExecutionMonitor progMon) throws Exception {
 
                 final ThreadPool pool = KNIMEConstants.GLOBAL_THREAD_POOL;
                 int procCount = (int) (Runtime.getRuntime().availableProcessors() * (2.0 / 3));
@@ -178,30 +178,66 @@ public class KernelCalculator implements Externalizable {
                                 public RealMatrix call() throws Exception {
                                         double[][] resultArrayMatrix = new double[training.length][test.length];
                                         CalculateKernelValuesRunnable[] kct = new CalculateKernelValuesRunnable[test.length];
-                                        for (int i = 0; i < kct.length; i++) {
+                                        int numberOfRunnables = kct.length;
+                                        for (int i = 0; i < numberOfRunnables; i++) {
                                                 kct[i] = new CalculateKernelValuesRunnable(0, training.length, i, i + 1, training, test,
                                                                 resultArrayMatrix, m_kernelFunction, semaphore);
                                         }
-                                        Future<?>[] threads = new Future<?>[kct.length];
-                                        for (int i = 0; i < kct.length; i++) {
+                                        Future<?>[] threads = new Future<?>[numberOfRunnables];
+                                        double progCounter = 0;
+                                        for (int i = 0; i < numberOfRunnables; i++) {
+                                                try {
+                                                        progMon.checkCanceled();
+                                                } catch (Exception e) {
+                                                        for (int j = 0; j < i; j++) {
+                                                                if (threads[j] != null) {
+                                                                        threads[j].cancel(true);
+                                                                }
+                                                        }
+                                                        throw e;
+                                                }
                                                 semaphore.acquire();
                                                 threads[i] = pool.enqueue(kct[i]);
+                                                progMon.setProgress(progCounter / (2 * numberOfRunnables), "Kernel calculation started (" + i + "/"
+                                                                + numberOfRunnables + ")");
+                                                progCounter += 1;
                                         }
-                                        for (int i = 0; i < kct.length; i++) {
+                                        for (int i = 0; i < numberOfRunnables; i++) {
+                                                try {
+                                                        progMon.checkCanceled();
+                                                } catch (Exception e) {
+                                                        for (int j = 0; j < numberOfRunnables; j++) {
+                                                                if (threads[j] != null) {
+                                                                        threads[j].cancel(true);
+                                                                }
+                                                        }
+                                                        throw e;
+                                                }
                                                 semaphore.acquire();
                                                 threads[i].get();
                                                 semaphore.release();
+                                                progMon.setProgress(progCounter / (2 * numberOfRunnables), "Kernel calculation finished (" + i + "/"
+                                                                + numberOfRunnables + ")");
+                                                progCounter += 1;
                                         }
                                         return MatrixUtils.createRealMatrix(resultArrayMatrix);
                                 }
 
                         });
-                } catch (ExecutionException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                } catch (Exception e) {
+                        throw e;
                 }
 
                 return result;
+        }
+
+        private RealMatrix calculateKernelVector(final double[][] training, final double[] test, KernelFunction kernelFunction) {
+                double[] result = new double[training.length];
+
+                for (int r = 0; r < training.length; r++) {
+                        result[r] = kernelFunction.calculate(training[r], test);
+                }
+                return MatrixUtils.createColumnRealMatrix(result);
         }
 
         private class CalculateKernelValuesRunnable implements Runnable {

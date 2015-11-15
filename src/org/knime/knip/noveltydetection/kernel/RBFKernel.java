@@ -8,7 +8,8 @@ public class RBFKernel implements KernelFunction {
 
         private double m_sigma;
 
-        // Default constructor for Externalizable Interface
+        // Framework constructor for loading
+        // do not use for anything else!
         public RBFKernel() {
 
         }

@@ -62,11 +62,10 @@ import org.knime.core.data.DoubleValue;
 import org.knime.core.data.NominalValue;
 import org.knime.core.data.StringValue;
 import org.knime.core.data.container.ColumnRearranger;
-import org.knime.core.data.def.DefaultRow;
+import org.knime.core.data.container.SingleCellFactory;
 import org.knime.core.data.def.DoubleCell;
 import org.knime.core.data.def.StringCell;
 import org.knime.core.data.sort.BufferedDataTableSorter;
-import org.knime.core.node.BufferedDataContainer;
 import org.knime.core.node.BufferedDataTable;
 import org.knime.core.node.BufferedDataTableHolder;
 import org.knime.core.node.ExecutionContext;
@@ -76,6 +75,7 @@ import org.knime.core.node.NodeModel;
 import org.knime.core.node.NodeSettingsRO;
 import org.knime.core.node.NodeSettingsWO;
 import org.knime.core.node.defaultnodesettings.SettingsModelBoolean;
+import org.knime.core.node.defaultnodesettings.SettingsModelDouble;
 import org.knime.core.node.defaultnodesettings.SettingsModelFilterString;
 import org.knime.core.node.defaultnodesettings.SettingsModelInteger;
 import org.knime.core.node.defaultnodesettings.SettingsModelIntegerBounded;
@@ -83,7 +83,10 @@ import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.knip.noveltydetection.kernel.EXPHIKKernel;
 import org.knime.knip.noveltydetection.kernel.HIKKernel;
 import org.knime.knip.noveltydetection.kernel.KernelCalculator;
+import org.knime.knip.noveltydetection.kernel.KernelCalculator.KernelType;
 import org.knime.knip.noveltydetection.kernel.KernelFunction;
+import org.knime.knip.noveltydetection.kernel.PolynomialKernel;
+import org.knime.knip.noveltydetection.kernel.RBFKernel;
 
 /**
  * Crop BitMasks or parts of images according to a Labeling
@@ -96,9 +99,13 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
 
         static final int DEFAULT_NUMBER_OF_NEIGHBORS = 100;
         static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK"};
-        static final String DEFAULT_KERNEL = "HIK";
+        static final KernelType DEFAULT_KERNEL = KernelType.RBF;
         static final boolean DEFAULT_SORT_TABLE = false;
         static final boolean DEFAULT_NORMALIZE = true;
+        static final double DEFAULT_SIGMA = 0.5;
+        static final double DEFAULT_GAMMA = 1.0;
+        static final double DEFAULT_BIAS = 2.0;
+        static final double DEFAULT_POWER = 3.0;
 
         /**
          * Helper
@@ -111,7 +118,7 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
         }
 
         static SettingsModelString createKernelFunctionSelectionModel() {
-                return new SettingsModelString("kernelFunctionLocalNoveltyScorer", DEFAULT_KERNEL);
+                return new SettingsModelString("kernelFunctionLocalNoveltyScorer", DEFAULT_KERNEL.toString());
         }
 
         static SettingsModelFilterString createColumnSelectionModel() {
@@ -130,6 +137,30 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 return new SettingsModelBoolean("NormalizeLocalNoveltyScorer", DEFAULT_NORMALIZE);
         }
 
+        static SettingsModelDouble createRBFSigmaModel() {
+                SettingsModelDouble sm = new SettingsModelDouble("sigmaRBF", DEFAULT_SIGMA);
+                //                sm.setEnabled(false);
+                return sm;
+        }
+
+        static SettingsModelDouble createPolynomialGammaModel() {
+                SettingsModelDouble sm = new SettingsModelDouble("gammaPolynomial", DEFAULT_GAMMA);
+                sm.setEnabled(false);
+                return sm;
+        }
+
+        static SettingsModelDouble createPolynomialBiasModel() {
+                SettingsModelDouble sm = new SettingsModelDouble("biasPolynomial", DEFAULT_BIAS);
+                sm.setEnabled(false);
+                return sm;
+        }
+
+        static SettingsModelDouble createPolynomialPower() {
+                SettingsModelDouble sm = new SettingsModelDouble("powerPolynomial", DEFAULT_POWER);
+                sm.setEnabled(false);
+                return sm;
+        }
+
         /* SettingsModels */
         private SettingsModelInteger m_numberOfNeighbors = createNumberOfNeighborsModel();
         private SettingsModelString m_kernelFunction = createKernelFunctionSelectionModel();
@@ -137,6 +168,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
         private SettingsModelString m_classColumn = createClassColumnSelectionModel();
         private SettingsModelBoolean m_sortTable = createSortTableModel();
         private SettingsModelBoolean m_normalize = createNormalizeModel();
+        private SettingsModelDouble m_sigma = createRBFSigmaModel();
+        private SettingsModelDouble m_gamma = createPolynomialGammaModel();
+        private SettingsModelDouble m_bias = createPolynomialBiasModel();
+        private SettingsModelDouble m_power = createPolynomialPower();
 
         /* Resulting BufferedDataTable */
         private BufferedDataTable m_data;
@@ -153,7 +188,6 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
          */
         @Override
         protected DataTableSpec[] configure(final DataTableSpec[] inSpecs) throws InvalidSettingsException {
-                // TODO check inspec for img value column
 
                 final DataTableSpec trainingTableSpec = (DataTableSpec) inSpecs[0];
                 final DataTableSpec testTableSpec = (DataTableSpec) inSpecs[1];
@@ -201,7 +235,6 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
 
                 BufferedDataTable trainingIn = inData[0];
                 final BufferedDataTable testIn = inData[1];
-                final BufferedDataContainer container = exec.createDataContainer(createOutSpec(testIn.getDataTableSpec())[0]);
 
                 ColumnRearranger trainingRearranger = new ColumnRearranger(trainingIn.getDataTableSpec());
                 ColumnRearranger testRearranger = new ColumnRearranger(testIn.getDataTableSpec());
@@ -209,7 +242,16 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 int numberOfNeighbors = m_numberOfNeighbors.getIntValue();
                 final int classColIdx = trainingIn.getDataTableSpec().findColumnIndex(m_classColumn.getStringValue());
 
+                ExecutionMonitor calcProgMon = null;
+                ExecutionMonitor globalKernelProgMon = exec.createSubProgress(0.2);
+                ExecutionMonitor trainingKernelProgMon = exec.createSubProgress(0.2);
+                ExecutionContext appendNoveltyExec = exec.createSubExecutionContext(0.1);
+
                 if (m_sortTable.getBooleanValue()) {
+                        ExecutionContext sortExec = exec.createSubExecutionContext(0.1);
+                        calcProgMon = exec.createSubProgress(0.4);
+                        globalKernelProgMon = exec.createSubProgress(0.2);
+                        trainingKernelProgMon = exec.createSubProgress(0.2);
                         BufferedDataTableSorter sorter = new BufferedDataTableSorter(trainingIn, new Comparator<DataRow>() {
 
                                 @Override
@@ -220,7 +262,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                                 }
 
                         });
-                        trainingIn = sorter.sort(exec);
+                        trainingIn = sorter.sort(sortExec);
+                        sortExec.setProgress(1.0);
+                } else {
+                        calcProgMon = exec.createSubProgress(0.5);
                 }
 
                 if (numberOfNeighbors > trainingIn.getRowCount()) {
@@ -243,115 +288,77 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
 
                 // Get KernelFunction
                 KernelFunction kernelFunction = null;
-                switch (m_kernelFunction.getStringValue()) {
-                case "HIK":
+                KernelType kernelType = KernelType.valueOf(m_kernelFunction.getStringValue());
+                switch (kernelType) {
+                case HIK:
                         kernelFunction = new HIKKernel();
                         break;
-                case "EXPHIK":
+                case EXPHIK:
                         kernelFunction = new EXPHIKKernel();
                         break;
+                case RBF:
+                        kernelFunction = new RBFKernel(m_sigma.getDoubleValue());
+                        break;
+                case Polynomial:
+                        kernelFunction = new PolynomialKernel(m_gamma.getDoubleValue(), m_bias.getDoubleValue(), m_power.getDoubleValue());
+                        break;
                 default:
-                        kernelFunction = new HIKKernel();
+                        kernelFunction = new RBFKernel(m_sigma.getDoubleValue());
                 }
+
+                exec.checkCanceled();
 
                 // Create KernelCalculator
                 KernelCalculator kernelCalculator = new KernelCalculator(trainingData, kernelFunction);
 
+                exec.checkCanceled();
+
                 // Get global KernelMatrix
-                RealMatrix globalKernelMatrix = kernelCalculator.kernelize(trainingData, testData);
+                RealMatrix globalKernelMatrix = kernelCalculator.kernelize(trainingData, testData, globalKernelProgMon);
+                globalKernelProgMon.setProgress(1.0);
+
+                exec.checkCanceled();
 
                 // Get training KernelMatrix
-                RealMatrix trainingKernelMatrix = kernelCalculator.kernelize(trainingData, trainingData);
+                RealMatrix trainingKernelMatrix = kernelCalculator.kernelize(trainingData, trainingData, trainingKernelProgMon);
+                trainingKernelProgMon.setProgress(1.0);
 
-                // Calculate Local model for each row in the test table
-                int currentRowIdx = 0;
-                final int rowCount = testIn.getRowCount();
+                exec.checkCanceled();
 
-                ThreadController threadController = new ThreadController(exec, globalKernelMatrix, trainingKernelMatrix, labels, numberOfNeighbors,
-                                m_normalize.getBooleanValue());
-                double[] noveltyScores = threadController.process();
+                // Keep thread approach for possible use later
+                //                ThreadController threadController = new ThreadController(exec, globalKernelMatrix, trainingKernelMatrix, labels, numberOfNeighbors,
+                //                                m_normalize.getBooleanValue());
+                //                double[] noveltyScores = threadController.process();
 
-                for (DataRow row : testIn) {
+                LocalNoveltyScorer localNoveltyScorer = new LocalNoveltyScorer(calcProgMon, globalKernelMatrix, trainingKernelMatrix, labels,
+                                numberOfNeighbors, m_normalize.getBooleanValue());
+                double[] noveltyScores = localNoveltyScorer.calculateNoveltyScores();
+                exec.checkCanceled();
 
-                        // Get nearest neighbors according to distance to current sample in kernel feature space
-                        /*
-                        // Sort training samples according to distance to current sample in kernel feature space
+                ColumnRearranger appendNoveltyRearranger = new ColumnRearranger(testIn.getDataTableSpec());
+                appendNoveltyRearranger.append(new appendNoveltyScoreCellFactory(new DataColumnSpecCreator("Novelty Score", DoubleCell.TYPE)
+                                .createSpec(), noveltyScores));
+                m_data = exec.createColumnRearrangeTable(testIn, appendNoveltyRearranger, appendNoveltyExec);
 
-                        ValueIndexPair[] distances = ValueIndexPair.transformArray2ValueIndexPairArray(globalKernelMatrix.getColumn(currentRowIdx));
-                        ValueIndexPair[] neighbors = ValueIndexPair.getK(distances, numberOfNeighbors, new Comparator<ValueIndexPair>() {
-                                public int compare(ValueIndexPair o1, ValueIndexPair o2) {
-                                        double v1 = o1.getValue();
-                                        double v2 = o2.getValue();
-                                        int res = 0;
-                                        if (v1 < v2)
-                                                res = 1;
-                                        if (v1 > v2)
-                                                res = -1;
-                                        return res;
-                                }
-                        });
+                return new BufferedDataTable[] {m_data};
+        }
 
-                        // Sort neighbors according to class
-                        // NOTE: Since the instances are ordered by class in the original table
-                        //      sorting by indices is equivalent
-                        Arrays.sort(neighbors, new Comparator<ValueIndexPair>() {
-                                public int compare(ValueIndexPair o1, ValueIndexPair o2) {
-                                        int res = o1.getIndex() - o2.getIndex();
-                                        if (res < 0)
-                                                res = -1;
-                                        if (res > 0)
-                                                res = 1;
-                                        return res;
-                                }
-                        });
+        private class appendNoveltyScoreCellFactory extends SingleCellFactory {
 
-                        // get local labels and check for one class setting
-                        boolean oneClass = true;
-                        String[] localLabels = new String[numberOfNeighbors];
-                        int[] trainingMatrixIndices = new int[numberOfNeighbors];
-                        String currentLabel = labels[neighbors[0].getIndex()];
-                        for (int i = 0; i < localLabels.length; i++) {
-                                String label = labels[neighbors[i].getIndex()];
-                                if (!currentLabel.equals(label)) {
-                                        oneClass = false;
-                                }
-                                localLabels[i] = label;
-                                trainingMatrixIndices[i] = neighbors[i].getIndex();
-                        }
-                        // get kernel matrix of local training data
-                        RealMatrix localTrainingKernelMatrix = trainingKernelMatrix.getSubMatrix(trainingMatrixIndices, trainingMatrixIndices);
+                private double[] m_noveltyScores;
+                private int m_index;
 
-                        double score = 0;
-                        KNFST localModel = null;
-
-                        // train model
-                        if (oneClass) {
-                                localModel = new OneClassKNFST(localTrainingKernelMatrix);
-                        } else {
-                                localModel = new MultiClassKNFST(localTrainingKernelMatrix, localLabels);
-                        }
-
-                        double normalizer = getMin(localModel.getBetweenClassDistances());
-                        score = localModel.scoreTestData(
-                                        globalKernelMatrix.getColumnMatrix(currentRowIdx).getSubMatrix(trainingMatrixIndices, new int[] {0}))
-                                        .getScores()[0]
-                                        / normalizer;
-                                         */
-
-                        DataCell[] cells = new DataCell[row.getNumCells() + 1];
-                        for (int c = 0; c < cells.length; c++) {
-                                cells[c] = (c < cells.length - 1) ? row.getCell(c) : new DoubleCell(noveltyScores[currentRowIdx]);
-                        }
-                        container.addRowToTable(new DefaultRow(row.getKey(), cells));
-
-                        exec.checkCanceled();
-                        exec.setProgress((double) currentRowIdx / rowCount);
-                        currentRowIdx++;
+                public appendNoveltyScoreCellFactory(DataColumnSpec newColSpec, double[] noveltyScores) {
+                        super(newColSpec);
+                        m_noveltyScores = noveltyScores;
+                        m_index = 0;
+                        this.setParallelProcessing(false);
                 }
 
-                container.close();
-                m_data = container.getTable();
-                return new BufferedDataTable[] {m_data};
+                @Override
+                public DataCell getCell(DataRow row) {
+                        return new DoubleCell(m_noveltyScores[m_index++]);
+                }
         }
 
         /**

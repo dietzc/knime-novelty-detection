@@ -10,6 +10,8 @@ public class PolynomialKernel implements KernelFunction {
         private double m_bias;
         private double m_power;
 
+        // Framework constructor for loading
+        // do not use for anything else!
         public PolynomialKernel() {
                 // TODO Auto-generated constructor stub
         }
