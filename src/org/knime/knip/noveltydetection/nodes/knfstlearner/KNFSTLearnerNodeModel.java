@@ -235,6 +235,10 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 String kernelFunctionName = m_kernelFunctionModel.getStringValue();
                 boolean sortTable = m_sortTable.getBooleanValue();
 
+                if (data.getRowCount() == 0) {
+                        throw new InvalidSettingsException("The input table is empty");
+                }
+
                 ExecutionMonitor knfstExec = exec.createSubProgress(sortTable ? 0.7 : 0.9);
                 ExecutionMonitor tableExec = exec.createSubProgress(0.1);
 
@@ -344,8 +348,8 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                         cells[cells.length - 1] = new StringCell(uniqueLabels[r]);
                         container.addRowToTable(new DefaultRow(new RowKey("tar_" + r), cells));
 
-                        tableExec.setProgress(((double) r) / nullspaceDim,
-                                        "Writing target nullspace coordinates - class " + r + " of " + nullspaceDim);
+                        tableExec.setProgress(((double) r) / nullspaceDim, "Writing target nullspace coordinates - class " + r + " of "
+                                        + nullspaceDim);
                 }
                 container.close();
 
