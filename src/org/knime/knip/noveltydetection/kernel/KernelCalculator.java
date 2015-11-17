@@ -8,10 +8,10 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.eclipse.core.runtime.internal.adaptor.Semaphore;
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataRow;
 import org.knime.core.data.DoubleValue;
@@ -198,8 +198,8 @@ public class KernelCalculator implements Externalizable {
                                                 }
                                                 semaphore.acquire();
                                                 threads[i] = pool.enqueue(kct[i]);
-                                                progMon.setProgress(progCounter / (2 * numberOfRunnables), "Kernel calculation started (" + i + "/"
-                                                                + numberOfRunnables + ")");
+                                                progMon.setProgress(progCounter / (2 * numberOfRunnables),
+                                                                "Kernel calculation started (" + i + "/" + numberOfRunnables + ")");
                                                 progCounter += 1;
                                         }
                                         for (int i = 0; i < numberOfRunnables; i++) {
@@ -216,8 +216,8 @@ public class KernelCalculator implements Externalizable {
                                                 semaphore.acquire();
                                                 threads[i].get();
                                                 semaphore.release();
-                                                progMon.setProgress(progCounter / (2 * numberOfRunnables), "Kernel calculation finished (" + i + "/"
-                                                                + numberOfRunnables + ")");
+                                                progMon.setProgress(progCounter / (2 * numberOfRunnables),
+                                                                "Kernel calculation finished (" + i + "/" + numberOfRunnables + ")");
                                                 progCounter += 1;
                                         }
                                         return MatrixUtils.createRealMatrix(resultArrayMatrix);

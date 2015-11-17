@@ -3,9 +3,9 @@ package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Semaphore;
 
 import org.apache.commons.math3.linear.RealMatrix;
-import org.eclipse.core.runtime.internal.adaptor.Semaphore;
 import org.knime.knip.noveltydetection.knfst.KNFST;
 import org.knime.knip.noveltydetection.knfst.MultiClassKNFST;
 import org.knime.knip.noveltydetection.knfst.OneClassKNFST;
@@ -97,7 +97,8 @@ public class NoveltyScoreCalculationCallable implements Callable<Double> {
                         }
 
                         score = localModel.scoreTestData(
-                                        m_globalKernelMatrix.getColumnMatrix(m_index).getSubMatrix(trainingMatrixIndices, new int[] {0})).getScores()[0];
+                                        m_globalKernelMatrix.getColumnMatrix(m_index).getSubMatrix(trainingMatrixIndices, new int[] {0}))
+                                        .getScores()[0];
 
                         // normalize novelty score
                         if (m_normalize) {

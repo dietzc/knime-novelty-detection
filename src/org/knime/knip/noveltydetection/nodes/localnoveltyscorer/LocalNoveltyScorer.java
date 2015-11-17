@@ -3,9 +3,9 @@ package org.knime.knip.noveltydetection.nodes.localnoveltyscorer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 
 import org.apache.commons.math3.linear.RealMatrix;
-import org.eclipse.core.runtime.internal.adaptor.Semaphore;
 import org.knime.core.node.CanceledExecutionException;
 import org.knime.core.node.ExecutionMonitor;
 import org.knime.core.node.KNIMEConstants;
@@ -78,8 +78,8 @@ public class LocalNoveltyScorer {
                                 for (int i = 0; i < numTestSamples; i++) {
                                         semaphore.acquire();
                                         result[i] = (Double) scores[i].get();
-                                        m_exec.setProgress(((double) i) / numTestSamples, "Local novelty score calculated (" + i + "/"
-                                                        + numTestSamples + ")");
+                                        m_exec.setProgress(((double) i) / numTestSamples,
+                                                        "Local novelty score calculated (" + i + "/" + numTestSamples + ")");
                                         semaphore.release();
                                 }
 
@@ -128,8 +128,8 @@ public class LocalNoveltyScorer {
                         }
                         semaphore.acquire();
                         scores[i] = pool.enqueue(nct[i]);
-                        m_exec.setProgress(progCounter / (2 * numTestSamples), "Local novelty score calculation started (" + i + "/" + numTestSamples
-                                        + ")");
+                        m_exec.setProgress(progCounter / (2 * numTestSamples),
+                                        "Local novelty score calculation started (" + i + "/" + numTestSamples + ")");
                         progCounter += 1;
                 }
                 final double[] result = new double[numTestSamples];
