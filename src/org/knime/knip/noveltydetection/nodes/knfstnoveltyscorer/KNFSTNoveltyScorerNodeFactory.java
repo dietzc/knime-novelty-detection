@@ -59,29 +59,29 @@ import org.knime.core.node.NodeView;
  *
  * @param <L>
  */
-public class KNFSTNoveltyScorerNodeFactory<L extends Number & Comparable<L>> extends NodeFactory<KNFSTNoveltyScorerNodeModel<L>> {
+public class KNFSTNoveltyScorerNodeFactory extends NodeFactory<KNFSTNoveltyScorerNodeModel> {
 
         /**
          * {@inheritDoc}
          */
         @Override
         public NodeDialogPane createNodeDialogPane() {
-                return new KNFSTNoveltyScorerNodeDialog<L>();
+                return new KNFSTNoveltyScorerNodeDialog();
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public KNFSTNoveltyScorerNodeModel<L> createNodeModel() {
-                return new KNFSTNoveltyScorerNodeModel<L>();
+        public KNFSTNoveltyScorerNodeModel createNodeModel() {
+                return new KNFSTNoveltyScorerNodeModel();
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public NodeView<KNFSTNoveltyScorerNodeModel<L>> createNodeView(final int viewIndex, final KNFSTNoveltyScorerNodeModel<L> nodeModel) {
+        public NodeView<KNFSTNoveltyScorerNodeModel> createNodeView(final int viewIndex, final KNFSTNoveltyScorerNodeModel nodeModel) {
                 return null;
         }
 

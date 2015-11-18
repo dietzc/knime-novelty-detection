@@ -3,7 +3,7 @@ package org.knime.knip.noveltydetection.nodes.knfstnoveltyscorer;
 import org.knime.core.node.defaultnodesettings.DefaultNodeSettingsPane;
 import org.knime.core.node.defaultnodesettings.DialogComponentBoolean;
 
-public class KNFSTNoveltyScorerNodeDialog<L extends Comparable<L>> extends DefaultNodeSettingsPane {
+public class KNFSTNoveltyScorerNodeDialog extends DefaultNodeSettingsPane {
 
         /**
          * Default Constructor

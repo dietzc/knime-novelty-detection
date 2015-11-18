@@ -95,7 +95,7 @@ import org.knime.knip.noveltydetection.kernel.RBFKernel;
  * 
  * @param <L>
  */
-public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeModel implements BufferedDataTableHolder {
+public class LocalNoveltyScorerNodeModel extends NodeModel implements BufferedDataTableHolder {
 
         static final int DEFAULT_NUMBER_OF_NEIGHBORS = 100;
         static final String[] AVAILABLE_KERNELS = {"HIK", "EXPHIK"};
@@ -236,6 +236,10 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 BufferedDataTable trainingIn = inData[0];
                 final BufferedDataTable testIn = inData[1];
 
+                if (trainingIn.getRowCount() == 0 || testIn.getRowCount() == 0) {
+                        throw new InvalidSettingsException("One of the input tables is empty");
+                }
+
                 ColumnRearranger trainingRearranger = new ColumnRearranger(trainingIn.getDataTableSpec());
                 ColumnRearranger testRearranger = new ColumnRearranger(testIn.getDataTableSpec());
                 List<String> includedCols = m_columnSelection.getIncludeList();
@@ -283,7 +287,15 @@ public class LocalNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
                 String[] labels = new String[trainingIn.getRowCount()];
                 int l = 0;
                 for (DataRow row : trainingIn) {
-                        labels[l++] = ((StringValue) row.getCell(classColIdx)).getStringValue();
+                        DataCell classCell = row.getCell(classColIdx);
+                        if (classCell.isMissing()) {
+                                throw new IllegalArgumentException("Missing values are not supported.");
+                        } else if (!classCell.getType().isCompatible(StringValue.class)) {
+                                throw new IllegalArgumentException("The class column must be nominal.");
+                        }
+                        StringValue label = (StringValue) row.getCell(classColIdx);
+
+                        labels[l++] = label.getStringValue();
                 }
 
                 // Get KernelFunction

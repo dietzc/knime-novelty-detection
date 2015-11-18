@@ -78,8 +78,8 @@ public class LocalNoveltyScorer {
                                 for (int i = 0; i < numTestSamples; i++) {
                                         semaphore.acquire();
                                         result[i] = (Double) scores[i].get();
-                                        m_exec.setProgress(((double) i) / numTestSamples,
-                                                        "Local novelty score calculated (" + i + "/" + numTestSamples + ")");
+                                        m_exec.setProgress(((double) i) / numTestSamples, "Local novelty score calculated (" + i + "/"
+                                                        + numTestSamples + ")");
                                         semaphore.release();
                                 }
 
@@ -128,8 +128,8 @@ public class LocalNoveltyScorer {
                         }
                         semaphore.acquire();
                         scores[i] = pool.enqueue(nct[i]);
-                        m_exec.setProgress(progCounter / (2 * numTestSamples),
-                                        "Local novelty score calculation started (" + i + "/" + numTestSamples + ")");
+                        m_exec.setProgress(progCounter / (2 * numTestSamples), "Local novelty score calculation started (" + i + "/" + numTestSamples
+                                        + ")");
                         progCounter += 1;
                 }
                 final double[] result = new double[numTestSamples];
@@ -141,8 +141,8 @@ public class LocalNoveltyScorer {
                                 result[i] = (Double) scores[i].get();
                                 nct[i].ok();
                         } catch (Exception e) {
-                                for (int j = 0; j < scores.length; i++) {
-                                        scores[i].cancel(true);
+                                for (int j = 0; j < scores.length; j++) {
+                                        scores[j].cancel(true);
                                 }
                                 timerTask.cancel();
                                 throw e;

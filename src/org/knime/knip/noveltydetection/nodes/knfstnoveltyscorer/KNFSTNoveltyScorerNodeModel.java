@@ -80,7 +80,7 @@ import org.knime.knip.noveltydetection.nodes.knfstlearner.KNFSTPortObjectSpec;
  * @author <a href="mailto:adrian.nembach@gmx.net">Adrian Nembach</a>
  * @param <L>
  */
-public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeModel implements BufferedDataTableHolder {
+public class KNFSTNoveltyScorerNodeModel extends NodeModel implements BufferedDataTableHolder {
 
         static final boolean DEFAULT_APPEND_NOVELTY_SCORE = true;
         static final boolean DEFAULT_APPEND_NULLSPACE_COORDINATES = false;
@@ -182,7 +182,7 @@ public class KNFSTNoveltyScorerNodeModel<L extends Comparable<L>> extends NodeMo
 
                 boolean appendNoveltyScore = m_appendNoveltyScore.getBooleanValue();
                 boolean appendNullspaceCoordinates = m_appendNullspaceCoordinates.getBooleanValue();
-                double normalizer = getMin(knfst.getBetweenClassDistances());
+                double normalizer = m_normalize.getBooleanValue() ? getMin(knfst.getBetweenClassDistances()) : 1.0;
 
                 ArrayList<DataColumnSpec> outColSpecs = new ArrayList<DataColumnSpec>();
 

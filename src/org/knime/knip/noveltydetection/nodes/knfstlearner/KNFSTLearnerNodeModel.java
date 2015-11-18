@@ -103,7 +103,7 @@ import org.knime.knip.noveltydetection.knfst.OneClassKNFST;
  * 
  * @param <L>
  */
-public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
+public class KNFSTLearnerNodeModel extends NodeModel {
 
         public static final String CFG_KEY_POWER = "powerPolynomial";
 
@@ -303,6 +303,7 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                         break;
                 case Polynomial:
                         kernelFunction = new PolynomialKernel(m_gamma.getDoubleValue(), m_bias.getDoubleValue(), m_power.getDoubleValue());
+                        break;
                 default:
                         kernelFunction = new RBFKernel(m_sigma.getDoubleValue());
                 }
@@ -373,6 +374,10 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 m_columnSelection.loadSettingsFrom(settings);
                 m_classColumn.loadSettingsFrom(settings);
                 m_sortTable.loadSettingsFrom(settings);
+                m_bias.loadSettingsFrom(settings);
+                m_sigma.loadSettingsFrom(settings);
+                m_gamma.loadSettingsFrom(settings);
+                m_power.loadSettingsFrom(settings);
         }
 
         /**
@@ -400,6 +405,10 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 m_columnSelection.saveSettingsTo(settings);
                 m_classColumn.saveSettingsTo(settings);
                 m_sortTable.saveSettingsTo(settings);
+                m_sigma.saveSettingsTo(settings);
+                m_gamma.saveSettingsTo(settings);
+                m_bias.saveSettingsTo(settings);
+                m_power.saveSettingsTo(settings);
         }
 
         /**
@@ -411,6 +420,10 @@ public class KNFSTLearnerNodeModel<L extends Comparable<L>> extends NodeModel {
                 m_columnSelection.validateSettings(settings);
                 m_classColumn.validateSettings(settings);
                 m_sortTable.validateSettings(settings);
+                m_sigma.validateSettings(settings);
+                m_gamma.validateSettings(settings);
+                m_bias.validateSettings(settings);
+                m_power.validateSettings(settings);
         }
 
 }

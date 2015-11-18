@@ -59,29 +59,29 @@ import org.knime.core.node.NodeView;
  *
  * @param <L>
  */
-public class KNFSTLearnerNodeFactory<L extends Number & Comparable<L>> extends NodeFactory<KNFSTLearnerNodeModel<L>> {
+public class KNFSTLearnerNodeFactory extends NodeFactory<KNFSTLearnerNodeModel> {
 
         /**
          * {@inheritDoc}
          */
         @Override
         public NodeDialogPane createNodeDialogPane() {
-                return new KNFSTLearnerNodeDialog<L>();
+                return new KNFSTLearnerNodeDialog();
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public KNFSTLearnerNodeModel<L> createNodeModel() {
-                return new KNFSTLearnerNodeModel<L>();
+        public KNFSTLearnerNodeModel createNodeModel() {
+                return new KNFSTLearnerNodeModel();
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public NodeView<KNFSTLearnerNodeModel<L>> createNodeView(final int viewIndex, final KNFSTLearnerNodeModel<L> nodeModel) {
+        public NodeView<KNFSTLearnerNodeModel> createNodeView(final int viewIndex, final KNFSTLearnerNodeModel nodeModel) {
                 return null;
         }
 

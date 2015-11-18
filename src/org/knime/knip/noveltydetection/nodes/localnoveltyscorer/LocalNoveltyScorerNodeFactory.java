@@ -59,29 +59,29 @@ import org.knime.core.node.NodeView;
  *
  * @param <L>
  */
-public class LocalNoveltyScorerNodeFactory<L extends Number & Comparable<L>> extends NodeFactory<LocalNoveltyScorerNodeModel<L>> {
+public class LocalNoveltyScorerNodeFactory extends NodeFactory<LocalNoveltyScorerNodeModel> {
 
         /**
          * {@inheritDoc}
          */
         @Override
         public NodeDialogPane createNodeDialogPane() {
-                return new LocalNoveltyScorerNodeDialog<L>();
+                return new LocalNoveltyScorerNodeDialog();
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public LocalNoveltyScorerNodeModel<L> createNodeModel() {
-                return new LocalNoveltyScorerNodeModel<L>();
+        public LocalNoveltyScorerNodeModel createNodeModel() {
+                return new LocalNoveltyScorerNodeModel();
         }
 
         /**
          * {@inheritDoc}
          */
         @Override
-        public NodeView<LocalNoveltyScorerNodeModel<L>> createNodeView(final int viewIndex, final LocalNoveltyScorerNodeModel<L> nodeModel) {
+        public NodeView<LocalNoveltyScorerNodeModel> createNodeView(final int viewIndex, final LocalNoveltyScorerNodeModel nodeModel) {
                 return null;
         }
 

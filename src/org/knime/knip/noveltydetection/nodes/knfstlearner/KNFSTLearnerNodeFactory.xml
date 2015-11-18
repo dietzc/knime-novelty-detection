@@ -42,8 +42,8 @@
 	<ports>
 		<inPort index="0" name="Training data"> Training data
 		</inPort>
-		<outPort index="0" name="KNFST-model">KNFST-model that can be used by a <i>KNFST Novelty Scorer</i> node to rate the novelty of instances</outPort>
-		<outPort index="1" name="Target points">Target points. Each class of the input table is represented by one point in the nullspace to which
+		<outPort index="0" name="Target points">Target points. Each class of the input table is represented by one point in the nullspace to which
 		all instances of that class are projected.</outPort>
+		<outPort index="1" name="KNFST-model">KNFST-model that can be used by a <i>KNFST Novelty Scorer</i> node to rate the novelty of instances</outPort>
 	</ports>
 </knimeNode>

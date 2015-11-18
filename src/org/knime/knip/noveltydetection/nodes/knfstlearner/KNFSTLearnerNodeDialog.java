@@ -15,7 +15,7 @@ import org.knime.core.node.defaultnodesettings.SettingsModelDouble;
 import org.knime.core.node.defaultnodesettings.SettingsModelString;
 import org.knime.knip.noveltydetection.kernel.KernelCalculator.KernelType;
 
-public class KNFSTLearnerNodeDialog<L extends Comparable<L>> extends DefaultNodeSettingsPane {
+public class KNFSTLearnerNodeDialog extends DefaultNodeSettingsPane {
 
         /**
          * Default Constructor
