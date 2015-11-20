@@ -399,6 +399,11 @@ public class LocalNoveltyScorerNodeModel extends NodeModel implements BufferedDa
                 m_classColumn.loadSettingsFrom(settings);
                 m_numberOfNeighbors.loadSettingsFrom(settings);
                 m_sortTable.loadSettingsFrom(settings);
+                m_sigma.loadSettingsFrom(settings);
+                m_gamma.loadSettingsFrom(settings);
+                m_bias.loadSettingsFrom(settings);
+                m_power.loadSettingsFrom(settings);
+                m_normalize.loadSettingsFrom(settings);
         }
 
         /**
@@ -427,6 +432,11 @@ public class LocalNoveltyScorerNodeModel extends NodeModel implements BufferedDa
                 m_classColumn.saveSettingsTo(settings);
                 m_numberOfNeighbors.saveSettingsTo(settings);
                 m_sortTable.saveSettingsTo(settings);
+                m_sigma.saveSettingsTo(settings);
+                m_gamma.saveSettingsTo(settings);
+                m_bias.saveSettingsTo(settings);
+                m_power.saveSettingsTo(settings);
+                m_normalize.saveSettingsTo(settings);
         }
 
         /**
@@ -447,5 +457,10 @@ public class LocalNoveltyScorerNodeModel extends NodeModel implements BufferedDa
                 m_classColumn.validateSettings(settings);
                 m_numberOfNeighbors.validateSettings(settings);
                 m_sortTable.validateSettings(settings);
+                m_sigma.validateSettings(settings);
+                m_gamma.validateSettings(settings);
+                m_bias.validateSettings(settings);
+                m_power.validateSettings(settings);
+                m_normalize.validateSettings(settings);
         }
 }
